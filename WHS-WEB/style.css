@@ -116,7 +116,7 @@ a:hover {
 header {
   background: rgba(28, 28, 30, 0.8);
   backdrop-filter: blur(10px);
-  padding: 20px 0; /* AJUSTADO */
+  padding: 20px 0;
   border-bottom: 1px solid #333;
   position: sticky;
   top: 0;
@@ -135,8 +135,8 @@ header .logo {
 }
 
 header .logo img {
-  height: 85px; /* AJUSTADO */
-  margin-right: 15px; /* AJUSTADO */
+  height: 85px;
+  margin-right: 15px;
   transition: transform 0.3s ease;
 }
 
@@ -145,7 +145,7 @@ header .logo img:hover {
 }
 
 .logo-text {
-  font-size: 2.8rem; /* AJUSTADO */
+  font-size: 2.8rem;
   font-weight: 700;
   color: var(--primary-color);
   text-shadow:
@@ -169,13 +169,13 @@ header .logo img:hover {
 nav ul.menu {
   list-style: none;
   display: flex;
-  gap: 45px; /* AJUSTADO */
+  gap: 45px;
 }
 
 nav ul.menu a {
   color: var(--text-primary);
   font-weight: 600;
-  font-size: 1.2rem; /* AJUSTADO */
+  font-size: 1.2rem;
   padding: 8px 0;
   position: relative;
 }
@@ -351,7 +351,7 @@ section:last-of-type {
 /* Video */
 .video-container {
   position: relative;
-  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  padding-bottom: 56.25%;
   height: 0;
   overflow: hidden;
   max-width: 900px;
@@ -826,7 +826,6 @@ footer p {
   align-items: center;
   justify-content: center;
   
-  /* Oculto por defecto con transición */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease-in-out;
@@ -845,11 +844,10 @@ footer p {
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   width: 90%;
   max-width: 800px;
-  max-height: 80vh; /* Altura máxima del 80% de la pantalla */
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
 
-  /* Oculto por defecto con transición */
   transform: scale(0.95);
   transition: transform 0.3s ease-in-out;
 }
@@ -874,7 +872,7 @@ footer p {
 }
 
 .modal-header h2::after {
-  display: none; /* Ocultamos la línea debajo de los h2 dentro del modal */
+  display: none;
 }
 
 #close-modal-btn {
@@ -892,7 +890,7 @@ footer p {
 }
 
 .modal-body {
-  overflow-y: auto; /* Permite hacer scroll si el texto es muy largo */
+  overflow-y: auto;
 }
 
 .modal-body p {
@@ -926,7 +924,7 @@ footer p {
     display: none;
     flex-direction: column;
     position: absolute;
-    top: 125px; /* AJUSTADO para el nuevo tamaño del header */
+    top: 125px;
     left: 0;
     width: 100%;
     background: var(--bg-dark-secondary);
