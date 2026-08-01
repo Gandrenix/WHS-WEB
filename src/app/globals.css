@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --font-inter: var(--font-inter), sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), monospace;
+  --font-fraunces: var(--font-fraunces), serif;
+  --font-bricolage: var(--font-bricolage), sans-serif;
+
+  --color-hueso: #F2EDE4;
+  --color-negro-tierra: #0D0A08;
+  --color-tierra-profunda: #2B1B14;
+  --color-grafito: #3A3532;
+  --color-purpura-wiener: #8B2FE0;
+  --color-purpura-glow: #C084FC;
+  --color-verde-agar: #7ED957;
+  --color-rojo-arterial: #7A1220;
+
+  /* Fallbacks para mantener compatibilidad */
+  --color-primary: #8B2FE0;
+  --color-secondary: #7ED957;
+  --color-bg-dark-primary: #0D0A08;
+  --color-bg-dark-secondary: #2B1B14;
+  --color-text-primary: #F2EDE4;
+  --color-text-secondary: #3A3532;
+}
+
+:root {
+  --color-hueso: #F2EDE4;
+  --color-negro-tierra: #0D0A08;
+  --color-tierra-profunda: #2B1B14;
+  --color-grafito: #3A3532;
+  --color-purpura-wiener: #8B2FE0;
+  --color-purpura-glow: #C084FC;
+  --color-verde-agar: #7ED957;
+  --color-rojo-arterial: #7A1220;
+}
+
+body {
+  background-color: #F2EDE4;
+  color: #3A3532;
+  font-family: var(--font-inter), sans-serif;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0D0A08;
+}
+::-webkit-scrollbar-thumb {
+  background: #8B2FE0;
+  border-radius: 4px;
+}
+
+/* Ficha de Espécimen (Strata I) */
+.lab-card {
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(58, 53, 50, 0.15);
+  transition: all 0.3s ease;
+}
+.lab-card:hover {
+  border-color: #7ED957;
+  box-shadow: 0 4px 20px rgba(126, 217, 87, 0.15);
+}
+
+/* Linterna Radial para Bedrock */
+.bedrock-container {
+  position: relative;
+}
+
+.bedrock-flashlight {
+  mask-image: radial-gradient(circle 220px at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle 220px at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%);
+}
+
+/* GSAP Animations */
+.fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+}
