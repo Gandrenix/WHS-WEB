@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@theme {
+  --font-inter: var(--font-inter);
+  --font-poppins: var(--font-poppins);
+  --color-primary: #9d2ec5;
+  --color-secondary: #00e68a;
+  --color-accent: #5b21b6;
+  --color-bg-dark-primary: #0a0a0b;
+  --color-bg-dark-secondary: #121214;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+}
+
+/* Base Styles */
+:root {
+  --primary-color: #9d2ec5;
+  --secondary-color: #00e68a;
+  --accent-color: #5b21b6;
+  --bg-dark-primary: #0a0a0b;
+  --bg-dark-secondary: #121214;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --glow-shadow-purple: 0 8px 25px rgba(157, 46, 197, 0.15);
+  --glow-shadow-green: 0 8px 25px rgba(0, 230, 138, 0.15);
+}
+
+body {
+  background: var(--bg-dark-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Original Heading Style */
+h2 {
+  font-size: 2.8rem;
+  text-align: center;
+  margin-bottom: 40px;
+  color: var(--secondary-color);
+  position: relative;
+  background: -webkit-linear-gradient(45deg, var(--secondary-color), var(--text-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+h2::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: var(--primary-color);
+  margin: 15px auto 0;
+  border-radius: 2px;
+}
+
+/* Original Buttons */
+.btn-primary {
+  display: inline-block;
+  padding: 14px 32px;
+  border: 2px solid transparent;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-family: var(--font-poppins), sans-serif;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  font-weight: 600;
+  text-align: center;
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  color: #ffffff;
+  box-shadow: var(--glow-shadow-purple);
+}
+
+.btn-primary:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(157, 46, 197, 0.3);
+  background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 14px 32px;
+  border: 2px solid var(--secondary-color);
+  border-radius: 30px;
+  font-size: 1rem;
+  font-family: var(--font-poppins), sans-serif;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  font-weight: 600;
+  text-align: center;
+  background-color: transparent;
+  color: var(--secondary-color);
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-color);
+  color: var(--bg-dark-primary);
+  transform: translateY(-4px);
+  box-shadow: var(--glow-shadow-green);
+}
+
+/* Layout Utilities */
+.container-custom {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* GSAP */
+.fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
