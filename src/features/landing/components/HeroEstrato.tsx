@@ -14,11 +14,17 @@ export function HeroEstrato() {
           SISTEMA ESTRATO v1.0 &bull; WIENER HOUND STUDIOS
         </div>
 
-        {/* Studio Main Title - Deep High Contrast Black */}
-        <h1 className="font-mono text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter uppercase text-[#0D0A08] mb-3 leading-none drop-shadow-sm">
+        {/* Studio Main Title - 3D Projected Ground Shadow */}
+        <h1
+          data-text="Wiener Hound"
+          className="estrato-3d-shadow font-mono text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter uppercase mb-3 leading-none select-none"
+        >
           Wiener Hound
         </h1>
-        <h2 className="font-mono text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-[0.25em] uppercase text-[#8B2FE0] mb-8">
+        <h2
+          data-text="S T U D I O S"
+          className="estrato-3d-shadow-purple font-mono text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-[0.25em] uppercase mb-8 select-none"
+        >
           S T U D I O S
         </h2>
 

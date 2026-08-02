@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useLogoAudio } from '../hooks/useLogoAudio';
 
-export function LogoAudioPlayer() {
+export function LogoAudioPlayer({ isDark = false }: { isDark?: boolean }) {
   const { isPlaying, toggleMusic } = useLogoAudio();
 
   return (
@@ -19,7 +19,11 @@ export function LogoAudioPlayer() {
             className="object-contain transition-transform duration-300 group-hover:scale-105"
           />
         </div>
-        <span className="logo-text ml-3 text-xl md:text-2xl font-mono font-black text-[#0D0A08] tracking-tight whitespace-nowrap">
+        <span
+          className={`logo-text ml-3 text-xl md:text-2xl font-mono font-black tracking-tight whitespace-nowrap transition-colors ${
+            isDark ? 'text-white' : 'text-[#0D0A08]'
+          }`}
+        >
           WH<span className="text-[#8B2FE0]">-</span>STUDIOS
         </span>
       </Link>

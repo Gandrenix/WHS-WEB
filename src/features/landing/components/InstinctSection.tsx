@@ -76,13 +76,13 @@ export function InstinctSection() {
                 title={isAnimationPaused ? 'Reanudar secuencia' : 'Pausar secuencia'}
               >
                 <span>{isAnimationPaused ? '▶' : '⏸'}</span>
-                <span>{isAnimationPaused ? 'REANUDAR' : '30 FPS'}</span>
+                <span>{isAnimationPaused ? 'REANUDAR' : '24 FPS'}</span>
               </button>
             </div>
 
             {/* Compact ASCII Animation Display */}
             <div className="py-2 flex items-center justify-center overflow-hidden min-h-[280px] bg-black/50 rounded-lg border border-white/10 shadow-inner">
-              <MrnaAsciiAnimation color="#7ED957" fontSize={8.5} isPaused={isAnimationPaused} />
+              <MrnaAsciiAnimation color="#C084FC" fontSize={8.5} isPaused={isAnimationPaused} />
             </div>
 
             {/* Box Footer */}

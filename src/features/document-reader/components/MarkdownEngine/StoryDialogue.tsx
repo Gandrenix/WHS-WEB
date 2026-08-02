@@ -16,7 +16,7 @@ export function StoryDialogue({ speaker, content, avatar, side = 'left', color, 
   const htmlContent = parseInlineStyles(content);
 
   return (
-    <div id={id} className={`my-6 flex items-start gap-4 ${isRight ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div id={id} className={`my-6 flex items-start gap-4 clear-both ${isRight ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* Avatar */}
       <div
         className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 shadow-lg relative bg-black/80 flex items-center justify-center font-mono font-bold text-white text-sm"

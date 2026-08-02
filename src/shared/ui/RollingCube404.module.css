@@ -1,0 +1,167 @@
+.container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  height: 520px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1400px;
+  overflow: visible;
+}
+
+
+.rail {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: rotateX(-30deg) rotateY(-30deg);
+  transform-style: preserve-3d;
+}
+
+.stamp {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(18, 10, 8, 0.95);
+  border: 2px solid rgba(139, 47, 224, 0.5);
+  color: #7ED957;
+  font-family: var(--font-mono, monospace);
+  font-weight: 900;
+  font-size: 6.5rem;
+  border-radius: 12px;
+  box-shadow: 0 0 25px rgba(126, 217, 87, 0.3);
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+}
+
+/* Loop stamps with smooth staggered delay */
+.stamp:nth-child(1) { animation: stampSlide 12s -0.0s linear infinite; }
+.stamp:nth-child(2) { animation: stampSlide 12s -1.2s linear infinite; }
+.stamp:nth-child(3) { animation: stampSlide 12s -2.4s linear infinite; }
+.stamp:nth-child(4) { animation: stampSlide 12s -3.6s linear infinite; }
+.stamp:nth-child(5) { animation: stampSlide 12s -4.8s linear infinite; }
+.stamp:nth-child(6) { animation: stampSlide 12s -6.0s linear infinite; }
+.stamp:nth-child(7) { animation: stampSlide 12s -7.2s linear infinite; }
+.stamp:nth-child(8) { animation: stampSlide 12s -8.4s linear infinite; }
+.stamp:nth-child(9) { animation: stampSlide 12s -9.6s linear infinite; }
+.stamp:nth-child(10) { animation: stampSlide 12s -10.8s linear infinite; }
+
+@keyframes stampSlide {
+  0% {
+    opacity: 0;
+    transform: rotateX(90deg) rotateZ(-90deg) translateZ(-200px) translateY(200px);
+  }
+  10% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: rotateX(90deg) rotateZ(-90deg) translateZ(-200px) translateY(-1800px);
+  }
+}
+
+.world {
+  transform: rotateX(-30deg) rotateY(-30deg);
+  transform-style: preserve-3d;
+}
+
+.forward {
+  position: absolute;
+  animation: slide 1.2s linear infinite;
+  transform-style: preserve-3d;
+}
+
+.box {
+  width: 200px;
+  height: 200px;
+  transform-origin: 100% 100%;
+  animation: roll 1.2s cubic-bezier(1, 0.01, 1, 1) infinite;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.wall {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: rgba(22, 14, 10, 0.92);
+  border: 3px solid #8B2FE0;
+  box-shadow: inset 0 0 30px rgba(139, 47, 224, 0.4), 0 0 20px rgba(139, 47, 224, 0.5);
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #C084FC;
+  font-family: var(--font-mono, monospace);
+  font-weight: 900;
+  font-size: 6.5rem;
+  border-radius: 10px;
+  transform-style: preserve-3d;
+}
+
+.wall:nth-child(1) {
+  transform: translateZ(100px);
+}
+.wall:nth-child(2) {
+  transform: rotateX(180deg) translateZ(100px);
+}
+.wall:nth-child(3) {
+  transform: rotateX(90deg) translateZ(100px);
+}
+.wall:nth-child(4) {
+  transform: rotateX(-90deg) translateZ(100px);
+}
+.wall:nth-child(5) {
+  transform: rotateY(90deg) translateZ(100px);
+}
+.wall:nth-child(6) {
+  transform: rotateY(-90deg) translateZ(100px);
+}
+
+@keyframes roll {
+  0% {
+    transform: rotateZ(0deg);
+  }
+  85% {
+    transform: rotateZ(90deg);
+  }
+  87% {
+    transform: rotateZ(88deg);
+  }
+  90% {
+    transform: rotateZ(90deg);
+  }
+  100% {
+    transform: rotateZ(90deg);
+  }
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-200px);
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    height: 340px;
+    transform: scale(0.65);
+  }
+}

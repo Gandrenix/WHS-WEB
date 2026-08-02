@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/shared/lib/supabase/server';
 import { ProjectForm } from '@/features/admin-dashboard';
 import { SignOutButton } from '@/features/auth';
+import { getAllProjects } from '@/entities/project/server';
 
 export default async function NuevoProyectoPage() {
   const supabase = await createClient();
@@ -15,6 +16,8 @@ export default async function NuevoProyectoPage() {
   if (!user) {
     redirect('/admin');
   }
+
+  const projects = await getAllProjects();
 
   return (
     <div className="min-h-screen bg-[#0D0A08] text-[#F2EDE4] flex font-mono">
@@ -102,14 +105,14 @@ export default async function NuevoProyectoPage() {
               &larr; VOLVER A DASHBOARD
             </Link>
             <h1 className="text-3xl font-black text-white uppercase tracking-tight">
-              Ficha de Registro de Especimen / Obra
+              Gestión de Obras &amp; Registro de Capítulos
             </h1>
             <p className="text-[#F2EDE4]/70 text-xs mt-1">
-              Ingresa la información requerida para registrar una nueva publicación en la base pública.
+              Crea nuevas obras o añade capítulos jerárquicos a publicaciones existentes en el catálogo.
             </p>
           </div>
 
-          <ProjectForm />
+          <ProjectForm projects={projects} />
         </div>
       </main>
     </div>

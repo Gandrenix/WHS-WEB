@@ -36,9 +36,24 @@ export interface MarkdownBlock {
   dimensions?: string;
 }
 
+export interface ParsedChapter {
+  id: string;
+  index: number;
+  chapterNumber?: number;
+  title: string;
+  actOrSeason?: string;
+  blocks: MarkdownBlock[];
+}
+
 export interface ParsedStory {
   frontmatter: ParsedFrontmatter;
   blocks: MarkdownBlock[];
+}
+
+export interface ParsedStoryWithChapters {
+  frontmatter: ParsedFrontmatter;
+  chapters: ParsedChapter[];
+  emptyActs: string[];
 }
 
 export function parseYamlFrontmatter(markdown: string): { frontmatter: ParsedFrontmatter; content: string } {
@@ -121,17 +136,23 @@ export function parseMarkdownStory(rawMarkdown: string): ParsedStory {
     }
 
     // Check HTML <speech>
-    const htmlSpeechMatch = textWithoutId.match(
-      /<speech\s+(?:speaker="([^"]+)")?\s*(?:avatar="([^"]+)")?\s*(?:side="([^"]+)")?\s*(?:color="([^"]+)")?>([\s\S]*?)<\/speech>/i
-    );
-    if (htmlSpeechMatch) {
+    const htmlSpeechTag = textWithoutId.match(/<speech\s*([\s\S]*?)>([\s\S]*?)<\/speech>/i);
+    if (htmlSpeechTag) {
+      const attrsStr = htmlSpeechTag[1];
+      const speechBody = htmlSpeechTag[2].trim();
+
+      const speakerMatch = attrsStr.match(/speaker=["']([^"']*)["']/i);
+      const avatarMatch = attrsStr.match(/avatar=["']([^"']*)["']/i);
+      const sideMatch = attrsStr.match(/side=["']([^"']*)["']/i);
+      const colorMatch = attrsStr.match(/color=["']([^"']*)["']/i);
+
       blocks.push({
         type: 'speech',
-        speaker: htmlSpeechMatch[1] || 'Personaje',
-        avatar: htmlSpeechMatch[2],
-        side: (htmlSpeechMatch[3] as 'left' | 'right') || 'left',
-        color: htmlSpeechMatch[4],
-        content: htmlSpeechMatch[5].trim(),
+        speaker: speakerMatch ? speakerMatch[1] || 'Personaje' : 'Personaje',
+        avatar: avatarMatch && avatarMatch[1] ? avatarMatch[1] : undefined,
+        side: sideMatch && (sideMatch[1] === 'left' || sideMatch[1] === 'right') ? (sideMatch[1] as 'left' | 'right') : 'left',
+        color: colorMatch && colorMatch[1] ? colorMatch[1] : undefined,
+        content: speechBody,
         id: blockId,
       });
       currentBlockLines = [];
@@ -192,6 +213,18 @@ export function parseMarkdownStory(rawMarkdown: string): ParsedStory {
 
   for (let i = 0; i < rawLines.length; i++) {
     const line = rawLines[i];
+
+    // CYOA Choice buttons: - [ ] [Choice Text](#target-id)
+    const cyoaMatch = line.match(/^-\s*\[\s*\]\s*\[([^\]]+)\]\((#[^)]+)\)/);
+    if (cyoaMatch) {
+      flushParagraph();
+      blocks.push({
+        type: 'cyoa_choice',
+        content: cyoaMatch[1].trim(),
+        id: cyoaMatch[2].replace('#', ''),
+      });
+      continue;
+    }
 
     // Scene dividers ***, ---, ___
     if (/^(?:\*\*\*|---|___)$/.test(line.trim())) {
@@ -268,36 +301,49 @@ export function parseInlineStyles(text: string): string {
   let result = text;
 
   // Wikilinks [[Target|Alias]] -> Alias, [[Target]] -> Target
-  result = result.replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, '<a class="story-link" href="#$1">$2</a>');
-  result = result.replace(/\[\[([^\]]+)\]\]/g, '<a class="story-link" href="#$1">$1</a>');
+  result = result.replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, '<a class="story-link text-[#C084FC] underline decoration-[#8B2FE0]/40 font-bold hover:text-white transition-colors" href="#$1">$2</a>');
+  result = result.replace(/\[\[([^\]]+)\]\]/g, '<a class="story-link text-[#C084FC] underline decoration-[#8B2FE0]/40 font-bold hover:text-white transition-colors" href="#$1">$1</a>');
 
   // Highlights ==text== -> <mark class="story-highlight">text</mark>
-  result = result.replace(/==(.*?)==/g, '<mark class="story-highlight">$1</mark>');
+  result = result.replace(/==(.*?)==/g, '<mark class="story-highlight bg-[#8B2FE0]/30 text-[#F2EDE4] px-1.5 py-0.5 rounded border border-[#8B2FE0]/50 font-semibold">$1</mark>');
 
   // Underline <u>text</u> or ++text++
-  result = result.replace(/\+\+(.*?)\+\+/g, '<u class="story-underline">$1</u>');
+  result = result.replace(/\+\+(.*?)\+\+/g, '<u class="story-underline underline decoration-[#8B2FE0] underline-offset-4">$1</u>');
+
+  // Sizes {size: small/large/xl}
+  result = result.replace(/\{size:\s*small\}(.*?)(?=\{size:|\n|$)/g, '<span class="text-xs opacity-75 font-normal">$1</span>');
+  result = result.replace(/\{size:\s*large\}(.*?)(?=\{size:|\n|$)/g, '<span class="text-xl font-bold text-white">$1</span>');
+  result = result.replace(/\{size:\s*xl\}(.*?)(?=\{size:|\n|$)/g, '<span class="text-2xl sm:text-3xl font-black uppercase text-white">$1</span>');
 
   // Font attribute {font: name}
   result = result.replace(/\{font:\s*([a-zA-Z0-9_-]+)\}/g, '');
 
-  // Whispers ~susurro~
-  result = result.replace(/~(.*?)~/g, '<span class="story-whisper">$1</span>');
+  // Exponent ^sup^
+  result = result.replace(/\^([^\^]+)\^/g, '<sup class="text-[0.75em] text-[#C084FC] font-mono">$1</sup>');
+
+  // Whispers & Subscripts ~text~
+  result = result.replace(/~([^~]+)~/g, (_, txt) => {
+    if (txt.toLowerCase() === 'susurro' || txt.includes(' ')) {
+      return `<span class="story-whisper italic opacity-70 text-xs tracking-wider">${txt}</span>`;
+    }
+    return `<sub class="text-[0.75em] text-[#7ED957] font-mono">${txt}</sub>`;
+  });
 
   // Colors [Text]{color: token_or_hex}
   result = result.replace(/\[([^\]]+)\]\{color:\s*([^}]+)\}/g, (_, txt, clr) => {
-    return `<span class="story-color-${clr.trim()}" style="color: ${getNarrativeColorHex(clr)}">${txt}</span>`;
+    return `<span class="story-color-${clr.trim()} font-semibold" style="color: ${getNarrativeColorHex(clr)}">${txt}</span>`;
   });
 
   // Effects [Text]{glow: color}
   result = result.replace(/\[([^\]]+)\]\{glow:\s*([^}]+)\}/g, (_, txt, clr) => {
-    return `<span class="story-effect-glow" style="text-shadow: 0 0 12px ${clr}">${txt}</span>`;
+    return `<span class="story-effect-glow font-bold" style="text-shadow: 0 0 12px ${clr}">${txt}</span>`;
   });
 
   // Effects [Text]{effect: shake}
-  result = result.replace(/\[([^\]]+)\]\{effect:\s*shake\}/g, '<span class="story-effect-shake inline-block animate-bounce">$1</span>');
+  result = result.replace(/\[([^\]]+)\]\{effect:\s*shake\}/g, '<span class="story-effect-shake inline-block animate-bounce font-bold text-[#DC143C]">$1</span>');
 
   // Effects [Text]{effect: fade}
-  result = result.replace(/\[([^\]]+)\]\{effect:\s*fade\}/g, '<span class="story-effect-fade opacity-60 hover:opacity-100 transition-opacity">$1</span>');
+  result = result.replace(/\[([^\]]+)\]\{effect:\s*fade\}/g, '<span class="story-effect-fade opacity-60 hover:opacity-100 transition-opacity font-italic">$1</span>');
 
   // Bold & Italic
   result = result.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
@@ -305,7 +351,7 @@ export function parseInlineStyles(text: string): string {
   result = result.replace(/\*(.*?)\*/g, '<em class="story-italic">$1</em>');
 
   // Strikethrough ~~text~~
-  result = result.replace(/~~(.*?)~~/g, '<del class="story-strike">$1</del>');
+  result = result.replace(/~~(.*?)~~/g, '<del class="story-strike opacity-60 line-through">$1</del>');
 
   return result;
 }
@@ -334,3 +380,191 @@ export function getNarrativeColorHex(colorToken: string): string {
   if (colorToken.startsWith('#') || colorToken.startsWith('rgb')) return colorToken;
   return '#e0e0e0';
 }
+
+export function parseStoryChapters(rawMarkdown: string): ParsedStoryWithChapters {
+  const { frontmatter, blocks } = parseMarkdownStory(rawMarkdown);
+
+  const allEncounteredActs: string[] = [];
+  if (frontmatter.act) allEncounteredActs.push(String(frontmatter.act));
+  if (frontmatter.season) allEncounteredActs.push(String(frontmatter.season));
+
+  if (blocks.length === 0) {
+    return {
+      frontmatter,
+      chapters: [
+        {
+          id: 'seccion-1',
+          index: 0,
+          chapterNumber: 1,
+          title: (frontmatter.title as string) || 'Inicio',
+          actOrSeason: frontmatter.act ? String(frontmatter.act) : frontmatter.season ? String(frontmatter.season) : undefined,
+          blocks: [],
+        },
+      ],
+      emptyActs: [],
+    };
+  }
+
+  const chapters: ParsedChapter[] = [];
+  let currentChapterBlocks: MarkdownBlock[] = [];
+  let currentChapterTitle = (frontmatter.title as string) || 'Inicio';
+  let currentActOrSeason: string | undefined = frontmatter.act
+    ? String(frontmatter.act)
+    : frontmatter.season
+    ? String(frontmatter.season)
+    : undefined;
+  let sectionIndex = 0;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+
+    // Act or Season Break: ## Acto I, ## Temporada 1, ## Parte 1
+    if (
+      block.type === 'heading' &&
+      block.level === 2 &&
+      /acto|parte|temporada|season|act|volumen|volume|libro|book|saga|arc|arco|sección|seccion/i.test(block.content)
+    ) {
+      if (currentChapterBlocks.length > 0) {
+        chapters.push({
+          id: `seccion-${sectionIndex + 1}`,
+          index: sectionIndex,
+          chapterNumber: sectionIndex + 1,
+          title: currentChapterTitle,
+          actOrSeason: currentActOrSeason,
+          blocks: currentChapterBlocks,
+        });
+        sectionIndex++;
+        currentChapterBlocks = [];
+      }
+
+      const actName = block.content.trim();
+      currentActOrSeason = actName;
+      if (!allEncounteredActs.includes(actName)) {
+        allEncounteredActs.push(actName);
+      }
+      continue;
+    }
+
+    // Chapter Break: # Heading 1 or headings containing Chapter, Prologue, Epilogue, Interlude
+    const isChapterHeaderBreak =
+      block.type === 'heading' &&
+      (block.level === 1 || /capítulo|chapter|prólogo|prologue|epílogo|epilogue|interludio|interlude/i.test(block.content));
+
+    if (isChapterHeaderBreak) {
+      if (currentChapterBlocks.length > 0) {
+        chapters.push({
+          id: `seccion-${sectionIndex + 1}`,
+          index: sectionIndex,
+          chapterNumber: sectionIndex + 1,
+          title: currentChapterTitle,
+          actOrSeason: currentActOrSeason,
+          blocks: currentChapterBlocks,
+        });
+        sectionIndex++;
+        currentChapterBlocks = [];
+      }
+      currentChapterTitle = block.content;
+    } else {
+      currentChapterBlocks.push(block);
+    }
+  }
+
+  if (currentChapterBlocks.length > 0 || chapters.length === 0) {
+    chapters.push({
+      id: `seccion-${sectionIndex + 1}`,
+      index: sectionIndex,
+      chapterNumber: sectionIndex + 1,
+      title: currentChapterTitle,
+      actOrSeason: currentActOrSeason,
+      blocks: currentChapterBlocks,
+    });
+  }
+
+  const usedActs = new Set(chapters.map((c) => c.actOrSeason).filter((a): a is string => Boolean(a)));
+  const emptyActs = allEncounteredActs.filter((a) => !usedActs.has(a));
+
+  return { frontmatter, chapters, emptyActs };
+}
+
+export function serializeStoryChapters(
+  frontmatter: ParsedFrontmatter,
+  chapters: ParsedChapter[],
+  emptyActs: string[] = []
+): string {
+  let md = '';
+
+  const keys = Object.keys(frontmatter);
+  if (keys.length > 0) {
+    md += '---\n';
+    for (const k of keys) {
+      const val = frontmatter[k];
+      if (Array.isArray(val)) {
+        md += `${k}:\n`;
+        val.forEach((v) => (md += `  - ${v}\n`));
+      } else if (val !== undefined && val !== null) {
+        md += `${k}: "${val}"\n`;
+      }
+    }
+    md += '---\n\n';
+  }
+
+  // Group chapters by actOrSeason in order of appearance
+  const actMap = new Map<string, ParsedChapter[]>();
+
+  // Preserve empty acts
+  for (const act of emptyActs) {
+    if (act && act.trim()) {
+      actMap.set(act.trim(), []);
+    }
+  }
+
+  for (const chap of chapters) {
+    const actKey = chap.actOrSeason && chap.actOrSeason.trim() ? chap.actOrSeason.trim() : '__GENERAL__';
+    if (!actMap.has(actKey)) {
+      actMap.set(actKey, []);
+    }
+    actMap.get(actKey)!.push(chap);
+  }
+
+  // Serialize bucket by bucket
+  for (const [actKey, actChapters] of actMap.entries()) {
+    if (actKey !== '__GENERAL__') {
+      md += `## ${actKey}\n\n`;
+    }
+
+    for (const chap of actChapters) {
+      md += `# ${chap.title}\n\n`;
+
+      for (const b of chap.blocks) {
+        if (b.type === 'scene_divider') {
+          md += '***\n\n';
+        } else if (b.type === 'heading') {
+          const hashes = '#'.repeat(b.level || 2);
+          md += `${hashes} ${b.content}\n\n`;
+        } else if (b.type === 'callout') {
+          md += `> [!${b.calloutType || 'note'}] ${b.calloutTitle || ''}\n`;
+          const lines = b.content.split('\n');
+          lines.forEach((l) => (md += `> ${l}\n`));
+          md += '\n';
+        } else if (b.type === 'speech') {
+          let attrs = `speaker="${b.speaker || 'Personaje'}"`;
+          if (b.avatar && b.avatar.trim()) attrs += ` avatar="${b.avatar.trim()}"`;
+          if (b.side && b.side !== 'left') attrs += ` side="${b.side}"`;
+          if (b.color && b.color.trim()) attrs += ` color="${b.color.trim()}"`;
+          md += `<speech ${attrs}>\n${b.content}\n</speech>\n\n`;
+        } else if (b.type === 'cyoa_choice') {
+          md += `- [ ] [${b.content}](#${b.id || ''})\n\n`;
+        } else if (b.type === 'embed_image') {
+          md += `![${b.alt || ''}](${b.src || ''})\n\n`;
+        } else if (b.type === 'paragraph') {
+          md += `${b.content}\n\n`;
+        }
+      }
+    }
+  }
+
+  return md.trim();
+}
+
+
+

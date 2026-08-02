@@ -1,11 +1,15 @@
 import Link from 'next/link';
 
-export function CategoriesDropdown() {
+export function CategoriesDropdown({ isDark = false }: { isDark?: boolean }) {
+  const linkStyles = isDark
+    ? 'text-[#F2EDE4] hover:text-[#C084FC]'
+    : 'text-[#0D0A08] hover:text-[#8B2FE0]';
+
   return (
     <li className="relative group/cat w-full md:w-auto text-center focus-within:outline-none">
       <Link
         href="/categorias"
-        className="nav-link block py-2 text-[#0D0A08] hover:text-[#8B2FE0] font-bold transition-colors"
+        className={`nav-link block py-2 font-bold transition-colors ${linkStyles}`}
       >
         Categorías
       </Link>

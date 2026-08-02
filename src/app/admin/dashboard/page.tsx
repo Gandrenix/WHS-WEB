@@ -17,6 +17,7 @@ export default async function DashboardPage() {
   }
 
   const projects = await getAllProjects();
+  const lightweightProjects = projects.map(({ markdown_content, ...rest }) => rest);
 
   return (
     <div className="min-h-screen bg-[#0D0A08] text-[#F2EDE4] flex font-mono">
@@ -132,7 +133,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          <ProjectList projects={projects} />
+          <ProjectList projects={lightweightProjects as any} />
         </div>
       </main>
     </div>

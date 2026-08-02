@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useMobileMenu } from '../hooks/useMobileMenu';
 
-export function MobileMenuToggle() {
+export function MobileMenuToggle({ isDark = false }: { isDark?: boolean }) {
   const { isOpen, isCategoriesOpen, toggleMenu, toggleCategories, closeMenu } =
     useMobileMenu();
 
@@ -12,7 +12,9 @@ export function MobileMenuToggle() {
     <div className="md:hidden">
       <button
         type="button"
-        className="bg-transparent border-none text-text-primary text-[1.8rem] cursor-pointer p-2 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
+        className={`bg-transparent border-none text-[1.8rem] cursor-pointer p-2 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg transition-colors ${
+          isDark ? 'text-white' : 'text-text-primary'
+        }`}
         onClick={toggleMenu}
         aria-expanded={isOpen}
         aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}

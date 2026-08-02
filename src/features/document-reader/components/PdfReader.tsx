@@ -12,6 +12,18 @@ export interface PdfReaderProps {
 export function PdfReader({ documentUrl, title }: PdfReaderProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setIsFullscreen(false);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-[#0D0A08] text-[#F2EDE4] flex flex-col font-mono">
       {/* PDF Header Toolbar */}
@@ -42,7 +54,7 @@ export function PdfReader({ documentUrl, title }: PdfReaderProps) {
             <Download className="w-4 h-4" /> DESCARGAR PDF
           </a>
           <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
+            onClick={toggleFullscreen}
             className="p-2 bg-black/60 hover:bg-white/10 text-white rounded-xl border border-white/20 transition-all text-xs cursor-pointer"
             title="Pantalla Completa"
           >

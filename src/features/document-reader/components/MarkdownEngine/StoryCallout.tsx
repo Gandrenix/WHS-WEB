@@ -46,7 +46,7 @@ export function StoryCallout({ type, title, content }: StoryCalloutProps) {
   const htmlContent = parseInlineStyles(content);
 
   return (
-    <div className={`my-6 p-5 rounded-2xl border-l-4 ${style.border} ${style.bg} backdrop-blur-md shadow-lg font-sans`}>
+    <div className={`my-6 p-5 rounded-2xl border-l-4 ${style.border} ${style.bg} backdrop-blur-md shadow-lg font-sans clear-both`}>
       <div className="flex items-center gap-2 mb-2 font-mono text-xs font-bold uppercase tracking-wider">
         <span className="text-base">{style.icon}</span>
         <span className={style.titleColor}>{title}</span>
