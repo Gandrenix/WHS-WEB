@@ -10,8 +10,9 @@ export const siteConfig = {
     { label: 'Contacto', href: '/#contacto' },
   ],
   categories: [
-    { label: 'Manga', href: '/categorias?type=manga' },
-    { label: 'Anime', href: '/categorias?type=anime' },
+    { label: 'Apps', href: '/categorias?type=apps' },
+    { label: 'Animaciones', href: '/categorias?type=animaciones' },
     { label: 'Visual Novels', href: '/categorias?type=visual-novel' },
+    { label: 'Games', href: '/categorias?type=games' },
   ],
 };

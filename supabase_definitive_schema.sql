@@ -15,7 +15,7 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS audio_url text;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS gallery_urls text[];
 
 ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_category_check;
-ALTER TABLE projects ADD CONSTRAINT projects_category_check CHECK (category IN ('manga', 'anime', 'visual-novel', 'apps-software'));
+ALTER TABLE projects ADD CONSTRAINT projects_category_check CHECK (category IN ('apps-software', 'animaciones', 'visual-novel', 'games', 'manga', 'anime'));
 
 ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_status_check;
 ALTER TABLE projects ADD CONSTRAINT projects_status_check CHECK (status IN ('En Emisión', 'Pausado', 'Finalizado'));
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS projects (
     title text NOT NULL,
     description text,
     image_url text,
-    category text CHECK (category IN ('manga', 'anime', 'visual-novel', 'apps-software')),
+    category text CHECK (category IN ('apps-software', 'animaciones', 'visual-novel', 'games', 'manga', 'anime')),
     status text CHECK (status IN ('En Emisión', 'Pausado', 'Finalizado')),
     project_url text,
     file_type text,

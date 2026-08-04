@@ -9,49 +9,11 @@ export interface CategoriesClientProps {
 }
 
 export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'apps' | 'manga' | 'anime' | 'visual-novel'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'apps' | 'animaciones' | 'visual-novel' | 'games'>('all');
 
-  // Fallback demo projects if database is empty
-  const defaultProjects: Project[] = [
-    {
-      id: 'demo-app-1',
-      title: 'SomaCore App',
-      description: 'Plataforma clínica de somatotipado genético y fenotípico para diagnóstico asistido.',
-      category: 'apps-software',
-      status: 'En Producción',
-      image_url: '/images/pale-veil.png',
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'demo-manga-1',
-      title: 'Umbral',
-      description: 'Manga de misterio y exploración psicológica. Capítulos en emisión semanal.',
-      category: 'manga',
-      status: 'En Emisión',
-      image_url: '/images/umbral.png',
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'demo-anime-1',
-      title: 'Código Estelar',
-      description: 'Serie animada corta de ciencia ficción y bioinformática espacial.',
-      category: 'anime',
-      status: 'En Producción',
-      image_url: '/images/pale-veil.png',
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'demo-vn-1',
-      title: 'The Pale Veil',
-      description: 'Novela visual inmersiva de horror psicológico con múltiples finales.',
-      category: 'visual-novel',
-      status: 'En Desarrollo',
-      image_url: '/images/banner.png',
-      created_at: new Date().toISOString(),
-    },
-  ];
-
-  const projectsToUse = initialProjects.length > 0 ? initialProjects : defaultProjects;
+  // Sin fallback de proyectos demo: el catálogo refleja el estado real de
+  // Supabase, incluyendo el caso legítimo de "no hay obras todavía".
+  const projectsToUse = initialProjects;
 
   const getProjectsByCategory = (category: string) => {
     return projectsToUse.filter((p) => {
@@ -65,14 +27,19 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
           cat.includes('software')
         );
       }
+      // "Animaciones" fusiona lo que antes eran Manga y Anime como categorías
+      // separadas, así que también reconoce esos valores viejos guardados en la DB.
+      if (category === 'animaciones') {
+        return cat === 'animaciones' || cat === 'manga' || cat === 'anime';
+      }
       return cat === category.toLowerCase();
     });
   };
 
   const appProjects = getProjectsByCategory('apps');
-  const mangaProjects = getProjectsByCategory('manga');
-  const animeProjects = getProjectsByCategory('anime');
+  const animacionesProjects = getProjectsByCategory('animaciones');
   const vnProjects = getProjectsByCategory('visual-novel');
+  const gamesProjects = getProjectsByCategory('games');
 
   return (
     <StarsBackground opacity={0.75} count={180} fontSize={14} speed={0.6} color="#FFFFFF" accentColor="#E0AAFF" density={0.6} className="min-h-screen bg-[#0D0A08] text-[#F2EDE4] font-sans">
@@ -87,7 +54,7 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
             Obras y Publicaciones
           </h1>
           <p className="font-sans text-base md:text-lg text-[#F2EDE4] max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-            Exploración del catálogo de Wiener Hound Studios: Apps &amp; BioTech, Manga, Anime y Novelas Visuales.
+            Exploración del catálogo de Wiener Hound Studios: Apps, Animaciones, Visual Novels y Games.
           </p>
 
           {/* Filter Bar */}
@@ -116,27 +83,15 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
             </a>
 
             <a
-              href="#manga"
-              onClick={() => setSelectedFilter('manga')}
+              href="#animaciones"
+              onClick={() => setSelectedFilter('animaciones')}
               className={`px-5 py-2.5 rounded-xl font-bold transition-all cursor-pointer border ${
-                selectedFilter === 'manga'
+                selectedFilter === 'animaciones'
                   ? 'bg-[#8B2FE0] text-white border-[#8B2FE0] shadow-xl scale-105'
                   : 'bg-black/70 text-[#C084FC] hover:bg-black border-[#8B2FE0]/50'
               }`}
             >
-              MANGA ({mangaProjects.length})
-            </a>
-
-            <a
-              href="#anime"
-              onClick={() => setSelectedFilter('anime')}
-              className={`px-5 py-2.5 rounded-xl font-bold transition-all cursor-pointer border ${
-                selectedFilter === 'anime'
-                  ? 'bg-[#7ED957] text-[#0D0A08] border-[#7ED957] shadow-xl scale-105'
-                  : 'bg-black/70 text-[#7ED957] hover:bg-black border-[#7ED957]/50'
-              }`}
-            >
-              ANIME ({animeProjects.length})
+              ANIMACIONES ({animacionesProjects.length})
             </a>
 
             <a
@@ -148,7 +103,19 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
                   : 'bg-black/70 text-[#C084FC] hover:bg-black border-[#C084FC]/50'
               }`}
             >
-              VISUAL NOVEL ({vnProjects.length})
+              VISUAL NOVELS ({vnProjects.length})
+            </a>
+
+            <a
+              href="#games"
+              onClick={() => setSelectedFilter('games')}
+              className={`px-5 py-2.5 rounded-xl font-bold transition-all cursor-pointer border ${
+                selectedFilter === 'games'
+                  ? 'bg-[#FFD700] text-[#0D0A08] border-[#FFD700] shadow-xl scale-105'
+                  : 'bg-black/70 text-[#FFD700] hover:bg-black border-[#FFD700]/50'
+              }`}
+            >
+              GAMES ({gamesProjects.length})
             </a>
           </div>
         </div>
@@ -182,27 +149,27 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
         </section>
       )}
 
-      {/* SECTION 1: MANGA */}
-      {(selectedFilter === 'all' || selectedFilter === 'manga') && (
-        <section id="manga" className="py-20 bg-transparent border-b border-white/10 relative z-10">
+      {/* SECTION 1: ANIMACIONES (fusiona lo que antes eran Manga y Anime) */}
+      {(selectedFilter === 'all' || selectedFilter === 'animaciones') && (
+        <section id="animaciones" className="py-20 bg-transparent border-b border-white/10 relative z-10">
           <div className="max-w-6xl mx-auto px-6 md:px-12">
             <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/15">
               <span className="px-3 py-1 bg-[#8B2FE0] text-white font-mono text-xs font-bold rounded">
                 01
               </span>
               <h2 className="font-mono text-2xl md:text-3xl font-black text-white uppercase tracking-tight">
-                Manga &amp; Cómics
+                Animaciones
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {mangaProjects.length > 0 ? (
-                mangaProjects.map((project) => (
+              {animacionesProjects.length > 0 ? (
+                animacionesProjects.map((project) => (
                   <ProjectCard key={project.id} project={project} variant="bedrock" />
                 ))
               ) : (
                 <p className="text-[#F2EDE4]/80 text-center col-span-full py-12 font-mono text-sm font-bold bg-[#160E0A]/90 rounded-2xl border border-white/20 shadow-xl">
-                  Aún no hay publicaciones registradas en la categoría Manga.
+                  Aún no hay publicaciones registradas en la categoría Animaciones.
                 </p>
               )}
             </div>
@@ -210,44 +177,16 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
         </section>
       )}
 
-      {/* SECTION 2: ANIME */}
-      {(selectedFilter === 'all' || selectedFilter === 'anime') && (
-        <section id="anime" className="py-20 bg-transparent border-b border-white/10 relative z-10">
-          <div className="max-w-6xl mx-auto px-6 md:px-12">
-            <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/15">
-              <span className="px-3 py-1 bg-[#7ED957] text-[#0D0A08] font-mono text-xs font-bold rounded">
-                02
-              </span>
-              <h2 className="font-bricolage text-2xl md:text-3xl font-black text-white uppercase tracking-tight">
-                Anime &amp; Animación
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {animeProjects.length > 0 ? (
-                animeProjects.map((project) => (
-                  <ProjectCard key={project.id} project={project} variant="dark" />
-                ))
-              ) : (
-                <p className="text-[#F2EDE4]/80 text-center col-span-full py-12 font-mono text-sm font-bold bg-[#160E0A]/90 rounded-2xl border border-white/20 shadow-xl">
-                  Aún no hay publicaciones registradas en la categoría Anime.
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* SECTION 3: VISUAL NOVEL */}
+      {/* SECTION 2: VISUAL NOVELS */}
       {(selectedFilter === 'all' || selectedFilter === 'visual-novel') && (
-        <section id="visual-novel" className="py-20 bg-transparent relative z-10">
+        <section id="visual-novel" className="py-20 bg-transparent border-b border-white/10 relative z-10">
           <div className="max-w-6xl mx-auto px-6 md:px-12">
             <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/15">
               <span className="px-3 py-1 bg-[#C084FC] text-[#0D0A08] font-mono text-xs font-bold rounded">
-                03
+                02
               </span>
               <h2 className="font-fraunces text-2xl md:text-3xl font-black text-white uppercase tracking-tight">
-                Visual Novel &amp; Narrativa Inmersiva
+                Visual Novels &amp; Narrativa Inmersiva
               </h2>
             </div>
 
@@ -258,7 +197,35 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
                 ))
               ) : (
                 <p className="text-[#F2EDE4]/80 text-center col-span-full py-12 font-mono text-sm font-bold bg-[#160E0A]/90 rounded-2xl border border-white/20 shadow-xl">
-                  Aún no hay publicaciones registradas en la categoría Visual Novel.
+                  Aún no hay publicaciones registradas en la categoría Visual Novels.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* SECTION 3: GAMES */}
+      {(selectedFilter === 'all' || selectedFilter === 'games') && (
+        <section id="games" className="py-20 bg-transparent relative z-10">
+          <div className="max-w-6xl mx-auto px-6 md:px-12">
+            <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/15">
+              <span className="px-3 py-1 bg-[#FFD700] text-[#0D0A08] font-mono text-xs font-bold rounded">
+                03
+              </span>
+              <h2 className="font-bricolage text-2xl md:text-3xl font-black text-white uppercase tracking-tight">
+                Games
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {gamesProjects.length > 0 ? (
+                gamesProjects.map((project) => (
+                  <ProjectCard key={project.id} project={project} variant="dark" />
+                ))
+              ) : (
+                <p className="text-[#F2EDE4]/80 text-center col-span-full py-12 font-mono text-sm font-bold bg-[#160E0A]/90 rounded-2xl border border-white/20 shadow-xl">
+                  Aún no hay publicaciones registradas en la categoría Games.
                 </p>
               )}
             </div>

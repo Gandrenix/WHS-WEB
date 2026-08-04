@@ -50,7 +50,8 @@ export function DepthIndicator() {
   return (
     <aside
       aria-label="Indicador de Profundidad ESTRATO"
-      className="fixed right-0 top-[66px] bottom-0 w-[50px] md:w-[130px] z-[70] bg-[#0D0A08]/95 backdrop-blur-md text-[#F2EDE4] border-l border-white/15 flex flex-col justify-between py-6 px-1 md:px-3 font-mono select-none"
+      className="fixed right-0 bottom-0 w-[50px] md:w-[130px] z-[70] bg-[#0D0A08]/95 backdrop-blur-md text-[#F2EDE4] border-l border-white/15 flex flex-col justify-between py-6 px-1 md:px-3 font-mono select-none"
+      style={{ top: 'var(--header-height, 66px)' }}
     >
       {/* Dynamic Progress Line & Dachshund Marker */}
       <div className="absolute left-2.5 md:left-4 top-10 bottom-10 w-[2px] bg-white/20">

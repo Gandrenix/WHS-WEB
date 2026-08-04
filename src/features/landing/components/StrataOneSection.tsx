@@ -1,52 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+import type { SpecimenCard } from '@/entities/specimen-card';
 
-export function StrataOneSection() {
+export interface StrataOneSectionProps {
+  /** Fichas editables desde /admin/dashboard/especimenes (ver app/page.tsx). */
+  specimenCards: SpecimenCard[];
+}
+
+export function StrataOneSection({ specimenCards }: StrataOneSectionProps) {
   const [activeWorkflowStep, setActiveWorkflowStep] = useState(3);
-
-  const specimenCards = [
-    {
-      cat: 'CAT. SC-001',
-      title: 'SomaCore',
-      desc: 'Motor de somatotipado clínico-genético. Pipeline de análisis fenotípico y biomarcadores.',
-      input: 'GENOTIPO.RAW',
-      output: 'SOMATOTIPO.JSON',
-      lang: 'PYTHON / R',
-      status: 'ACTIVO',
-      icon: '🧬',
-    },
-    {
-      cat: 'CAT. YM-002',
-      title: 'YOLO MicroMap',
-      desc: 'Detección automática de colonias bacterianas en placas de Petri mediante visión por computador.',
-      input: 'PETRISET-v2',
-      output: 'COLONIA_COUNT',
-      lang: 'YOLOv8 / OPENCV',
-      status: 'ACTIVO',
-      icon: '🧫',
-    },
-    {
-      cat: 'CAT. WC-003',
-      title: 'WienerCalc',
-      desc: 'Resurrección y refactorización optimizada de motor de cálculo de alta precisión.',
-      input: 'LEGACY_C98',
-      output: 'REFACTORED',
-      lang: 'C / SDL2',
-      status: 'ACTIVO',
-      icon: '💻',
-    },
-    {
-      cat: 'CAT. KR-004',
-      title: 'Kreo Framework',
-      desc: 'Marco de cumplimiento regulatorio y orquestación de equipos de investigación clínica.',
-      input: 'RES_8430/93',
-      output: 'COMPLIANCE',
-      lang: 'NEXT.JS / PRISMA',
-      status: 'ACTIVO',
-      icon: '📋',
-    },
-  ];
 
   const workflowSteps = [
     { step: '01', title: 'Adquisición de Datos', desc: 'Entrada de datos crudos' },
@@ -86,17 +50,23 @@ export function StrataOneSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {specimenCards.map((card) => (
             <div
-              key={card.cat}
+              key={card.id}
               className="lab-card p-6 rounded-xl bg-white/80 backdrop-blur-sm border border-[#3A3532]/20 flex flex-col justify-between shadow-sm hover:shadow-md transition-all"
             >
               <div>
                 <div className="flex justify-between items-center font-mono text-xs text-[#3A3532]/70 mb-3">
                   <span className="font-bold">{card.cat}</span>
-                  <span className="text-2xl">{card.icon}</span>
+                  {card.image_url ? (
+                    <div className="relative w-9 h-9 rounded-lg overflow-hidden border border-[#3A3532]/20 shrink-0">
+                      <Image src={card.image_url} alt={card.title} fill className="object-cover" />
+                    </div>
+                  ) : (
+                    <span className="text-2xl">{card.icon}</span>
+                  )}
                 </div>
                 <h3 className="font-mono text-xl font-extrabold text-[#0D0A08] mb-3">{card.title}</h3>
                 <p className="font-sans text-xs text-[#3A3532] leading-relaxed mb-6">
-                  {card.desc}
+                  {card.description}
                 </p>
               </div>
 
@@ -104,11 +74,15 @@ export function StrataOneSection() {
               <div className="font-mono text-xs space-y-2 pt-4 border-t border-[#3A3532]/15">
                 <div className="flex justify-between">
                   <span className="text-[#3A3532]/70">INPUT:</span>
-                  <span className="font-bold text-[#0D0A08]">{card.input}</span>
+                  <span className="font-bold text-[#0D0A08]">{card.input_label}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#3A3532]/70">OUTPUT:</span>
+                  <span className="font-bold text-[#0D0A08]">{card.output_label}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#3A3532]/70">LANG:</span>
-                  <span className="font-bold text-[#0D0A08]">{card.lang}</span>
+                  <span className="font-bold text-[#0D0A08]">{card.lang_label}</span>
                 </div>
                 <div className="flex justify-between items-center pt-1">
                   <span className="text-[#3A3532]/70">STATUS:</span>

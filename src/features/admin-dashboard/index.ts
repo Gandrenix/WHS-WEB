@@ -1,4 +1,11 @@
 export { ProjectForm } from './components/ProjectForm';
 export { ProjectList } from './components/ProjectList';
+export { AdminSidebar } from './components/AdminSidebar';
+export type { AdminSection } from './components/AdminSidebar';
+export { CommunityModerationList } from './components/CommunityModerationList';
+export { SpecimenCardsManager } from './components/SpecimenCardsManager';
 export * from './actions/project.actions';
+export * from './actions/community.actions';
+export * from './actions/specimenCard.actions';
 export * from './schemas/project.schema';
+export * from './schemas/specimenCard.schema';

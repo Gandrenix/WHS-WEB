@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import logoPlayingImg from '@/shared/assets/logo-playing.png';
 import { loginAction, type AuthState } from '../actions/auth.actions';
 
 const initialState: AuthState = {
@@ -18,7 +19,7 @@ export function LoginForm() {
       <div className="flex flex-col items-center mb-8 text-center">
         <div className="relative w-16 h-16 mb-3">
           <Image
-            src="/images/logo-playing.png"
+            src={logoPlayingImg}
             alt="WHS Logo"
             fill
             className="object-contain drop-shadow-md"

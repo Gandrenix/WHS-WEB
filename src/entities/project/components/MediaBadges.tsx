@@ -7,7 +7,9 @@ export interface MediaBadgesProps {
 }
 
 export function MediaBadges({ project, className = '' }: MediaBadgesProps) {
-  const hasMarkdown = Boolean(project.markdown_content || (project.file_type === 'markdown' && !project.document_url));
+  // Requiere file_type === 'markdown' explícito: markdown_content puede contener solo un
+  // stub de frontmatter (respaldo de video/audio/gallery_urls) en obras sin manuscrito real.
+  const hasMarkdown = Boolean(project.file_type === 'markdown' && (project.markdown_content || project.document_url));
   const hasPdf = Boolean(project.document_url || project.file_type === 'pdf');
   const hasVideo = Boolean(project.video_url && project.video_url.trim());
   const hasAudio = Boolean(project.audio_url && project.audio_url.trim());

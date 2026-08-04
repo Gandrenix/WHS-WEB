@@ -8,12 +8,19 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const isProtectedAdminRoute = request.nextUrl.pathname.startsWith('/admin/dashboard');
+  const pathname = request.nextUrl.pathname;
+  const isProtectedAdminRoute = pathname.startsWith('/admin/dashboard');
+  const isProtectedUserRoute = pathname.startsWith('/biblioteca');
+  const isProtectedRoute = isProtectedAdminRoute || isProtectedUserRoute;
 
-  // Solo realizar la verificación de red con Supabase Auth si se accede a rutas administrativas protegidas
-  if (!isProtectedAdminRoute) {
+  // Solo realizar la verificación de red con Supabase Auth si se accede a una zona protegida
+  if (!isProtectedRoute) {
     return supabaseResponse;
   }
+
+  // Destino de login: la zona de admin conserva su propio login por compatibilidad,
+  // pero ambas zonas usan el mismo formulario unificado en /login
+  const loginPath = '/login';
 
   try {
     const supabase = createServerClient<Database>(
@@ -45,13 +52,29 @@ export async function updateSession(request: NextRequest) {
 
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = '/admin';
+      url.pathname = loginPath;
       return NextResponse.redirect(url);
+    }
+
+    // El panel de administración es exclusivo para role='admin'; un lector normal
+    // que llegue aquí (con sesión válida) se envía de vuelta a su propia biblioteca.
+    if (isProtectedAdminRoute) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role !== 'admin') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/biblioteca';
+        return NextResponse.redirect(url);
+      }
     }
   } catch (err) {
     console.warn('Middleware auth verification error:', err);
     const url = request.nextUrl.clone();
-    url.pathname = '/admin';
+    url.pathname = loginPath;
     return NextResponse.redirect(url);
   }
 

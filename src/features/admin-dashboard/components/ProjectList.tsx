@@ -1,22 +1,25 @@
 'use client';
 
-import { useState, useActionState } from 'react';
+import { useState, useActionState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-  BookOpen, 
-  Edit3, 
-  FileText, 
-  Image as ImageIcon, 
-  Upload, 
-  X, 
-  Loader2, 
-  Info, 
-  Eye 
+import {
+  BookOpen,
+  Edit3,
+  FileText,
+  Image as ImageIcon,
+  Upload,
+  X,
+  Loader2,
+  Info,
+  Eye,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import type { Project } from '@/entities/project';
 import { MediaBadges } from '@/entities/project/components/MediaBadges';
-import { updateCoverImageAction, type ActionResponse } from '../actions/project.actions';
+import { ProjectDescriptionModal } from '@/entities/project/components/ProjectDescriptionModal';
+import { updateCoverImageAction, deleteProjectAction, type ActionResponse } from '../actions/project.actions';
 
 export interface ProjectListProps {
   projects: Project[];
@@ -30,11 +33,25 @@ export function ProjectList({ projects }: ProjectListProps) {
   const [coverModalProjectId, setCoverModalProjectId] = useState<string | null>(null);
   const [summaryModalProject, setSummaryModalProject] = useState<Project | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [deleteModalProject, setDeleteModalProject] = useState<Project | null>(null);
 
   const [coverState, coverFormAction, isCoverPending] = useActionState(
     updateCoverImageAction,
     initialState
   );
+
+  const [deleteState, deleteFormAction, isDeletePending] = useActionState(
+    deleteProjectAction,
+    initialState
+  );
+
+  // Cierra el modal solo tras un borrado exitoso; si hay error, se queda abierto
+  // mostrando el mensaje para que el admin lo vea (en vez de desaparecer solo).
+  useEffect(() => {
+    if (deleteState?.success) {
+      setDeleteModalProject(null);
+    }
+  }, [deleteState]);
 
   const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -73,11 +90,22 @@ export function ProjectList({ projects }: ProjectListProps) {
           const categoryBadgeColor =
             cat === 'apps' || cat === 'app' || cat === 'apps-software'
               ? 'bg-[#7ED957]/20 text-[#7ED957] border-[#7ED957]/50'
-              : cat === 'manga'
+              // "Animaciones" fusiona lo que antes eran Manga y Anime
+              : cat === 'animaciones' || cat === 'manga' || cat === 'anime'
               ? 'bg-[#8B2FE0]/20 text-[#C084FC] border-[#8B2FE0]/50'
-              : cat === 'anime'
-              ? 'bg-[#7ED957]/20 text-[#7ED957] border-[#7ED957]/50'
+              : cat === 'games'
+              ? 'bg-[#FFD700]/20 text-[#8a6d00] border-[#FFD700]/50'
               : 'bg-[#C084FC]/20 text-[#C084FC] border-[#C084FC]/50';
+          const categoryBadgeLabel =
+            cat === 'apps' || cat === 'app' || cat === 'apps-software'
+              ? 'Apps'
+              : cat === 'animaciones' || cat === 'manga' || cat === 'anime'
+              ? 'Animaciones'
+              : cat === 'visual-novel'
+              ? 'Visual Novels'
+              : cat === 'games'
+              ? 'Games'
+              : project.category;
 
           return (
             <div
@@ -105,7 +133,7 @@ export function ProjectList({ projects }: ProjectListProps) {
                   <span
                     className={`backdrop-blur-md border text-[10px] px-2.5 py-1 rounded-md uppercase tracking-wider font-bold ${categoryBadgeColor}`}
                   >
-                    {project.category}
+                    {categoryBadgeLabel}
                   </span>
                 </div>
 
@@ -146,8 +174,8 @@ export function ProjectList({ projects }: ProjectListProps) {
                     <MediaBadges project={project} />
                   </div>
 
-                  {/* 4 Quick Action Buttons Grid */}
-                  <div className="grid grid-cols-3 gap-2 text-[11px] pt-1">
+                  {/* Quick Action Buttons Grid */}
+                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                     {/* Read Work */}
                     <Link
                       href={`/categorias/${project.id}`}
@@ -176,6 +204,16 @@ export function ProjectList({ projects }: ProjectListProps) {
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>EDITAR</span>
                     </Link>
+
+                    {/* Delete Work (abre modal de confirmación, no borra directo) */}
+                    <button
+                      type="button"
+                      onClick={() => setDeleteModalProject(project)}
+                      className="p-2.5 bg-[#7A1220]/25 hover:bg-[#7A1220] text-[#ff8a95] hover:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-1 border border-[#7A1220]/50 text-center cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>ELIMINAR</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -262,65 +300,89 @@ export function ProjectList({ projects }: ProjectListProps) {
       )}
 
       {/* SUMMARY / FICHA TÉCNICA MODAL */}
-      {summaryModalProject && (
+      <ProjectDescriptionModal
+        title={summaryModalProject?.title || ''}
+        description={summaryModalProject?.description || ''}
+        imageUrl={summaryModalProject?.image_url}
+        category={summaryModalProject?.category}
+        status={summaryModalProject?.status}
+        isOpen={Boolean(summaryModalProject)}
+        onClose={() => setSummaryModalProject(null)}
+        footer={
+          summaryModalProject && (
+            <div className="flex justify-between items-center pt-2 text-[10px] text-[#F2EDE4]/60">
+              <span>ID REGISTRO: {summaryModalProject.id}</span>
+              <Link
+                href={`/categorias/${summaryModalProject.id}`}
+                target="_blank"
+                className="px-4 py-2 bg-[#8B2FE0] text-white rounded-xl font-bold flex items-center gap-1.5 text-xs hover:bg-[#C084FC]"
+              >
+                <Eye className="w-4 h-4" /> LEER OBRA AHORA &rarr;
+              </Link>
+            </div>
+          )
+        }
+      />
+
+      {/* DELETE CONFIRMATION MODAL — el borrado nunca ocurre con un solo clic */}
+      {deleteModalProject && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-[#120A08] border border-[#8B2FE0] rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-[#120A08] border border-[#7A1220] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-white/15 pb-3">
-              <span className="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-2">
-                <Info className="w-4 h-4 text-[#C084FC]" /> FICHA TÉCNICA Y RESUMEN DE LA OBRA
+              <span className="font-bold text-[#ff8a95] text-xs uppercase tracking-wider flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" /> ELIMINAR OBRA
               </span>
               <button
                 type="button"
-                onClick={() => setSummaryModalProject(null)}
+                onClick={() => setDeleteModalProject(null)}
                 className="p-1 text-[#F2EDE4]/60 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4 font-mono text-xs">
-              <div className="flex gap-4 items-center">
-                {summaryModalProject.image_url && (
-                  <div className="relative w-20 h-28 rounded-xl overflow-hidden border border-white/20 shrink-0">
-                    <Image
-                      src={summaryModalProject.image_url}
-                      alt={summaryModalProject.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                )}
-                <div className="space-y-1">
-                  <h3 className="text-white text-base font-black uppercase">{summaryModalProject.title}</h3>
-                  <div className="flex flex-wrap gap-2 text-[10px]">
-                    <span className="px-2 py-0.5 bg-[#8B2FE0]/30 text-[#C084FC] rounded border border-[#8B2FE0]/50 uppercase font-bold">
-                      {summaryModalProject.category}
-                    </span>
-                    <span className="px-2 py-0.5 bg-[#7ED957]/30 text-[#7ED957] rounded border border-[#7ED957]/50 font-bold">
-                      {summaryModalProject.status}
-                    </span>
-                  </div>
+            {deleteState?.error && (
+              <div className="p-3 bg-[#7A1220]/40 border border-[#7A1220] rounded-xl text-white text-xs font-bold">
+                {deleteState.error}
+              </div>
+            )}
+
+            <div className="flex gap-3 items-start p-4 bg-[#7A1220]/15 border border-[#7A1220]/40 rounded-xl">
+              {deleteModalProject.image_url && (
+                <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-white/15 shrink-0">
+                  <Image
+                    src={deleteModalProject.image_url}
+                    alt={deleteModalProject.title}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
-              </div>
-
-              <div className="p-4 bg-black/60 border border-white/10 rounded-xl space-y-2">
-                <span className="text-[#C084FC] text-[11px] font-bold block uppercase">Sinopsis / Descripción:</span>
-                <p className="font-sans text-xs text-[#F2EDE4]/90 leading-relaxed">
-                  {summaryModalProject.description}
-                </p>
-              </div>
-
-              <div className="flex justify-between items-center pt-2 text-[10px] text-[#F2EDE4]/60">
-                <span>ID REGISTRO: {summaryModalProject.id}</span>
-                <Link
-                  href={`/categorias/${summaryModalProject.id}`}
-                  target="_blank"
-                  className="px-4 py-2 bg-[#8B2FE0] text-white rounded-xl font-bold flex items-center gap-1.5 text-xs hover:bg-[#C084FC]"
-                >
-                  <Eye className="w-4 h-4" /> LEER OBRA AHORA &rarr;
-                </Link>
-              </div>
+              )}
+              <p className="font-sans text-xs text-[#F2EDE4]/90 leading-relaxed">
+                Estás a punto de eliminar permanentemente{' '}
+                <strong className="text-white">&ldquo;{deleteModalProject.title}&rdquo;</strong>, junto con todos sus
+                capítulos y estructura de manuscrito. Esta acción{' '}
+                <strong className="text-[#ff8a95]">no se puede deshacer</strong>.
+              </p>
             </div>
+
+            <form action={deleteFormAction} className="flex justify-end gap-3 pt-2">
+              <input type="hidden" name="target_project_id" value={deleteModalProject.id} />
+              <button
+                type="button"
+                onClick={() => setDeleteModalProject(null)}
+                className="px-4 py-2.5 bg-white/10 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                CANCELAR
+              </button>
+              <button
+                type="submit"
+                disabled={isDeletePending}
+                className="px-6 py-2.5 bg-[#7A1220] hover:bg-[#a01a2b] text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-lg disabled:opacity-50"
+              >
+                {isDeletePending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'SÍ, ELIMINAR DEFINITIVAMENTE'}
+              </button>
+            </form>
           </div>
         </div>
       )}

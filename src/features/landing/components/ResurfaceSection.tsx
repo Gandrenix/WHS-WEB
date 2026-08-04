@@ -1,12 +1,18 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import logoPlayingImg from '@/shared/assets/logo-playing.png';
 
-export function ResurfaceSection() {
-  const showLegalModal = (title: string) => {
-    alert(`${title}: Próximamente la versión completa del documento legal de Wiener Hound Studios.`);
-  };
+export interface ResurfaceSectionProps {
+  /** Botón "Hablemos de tu proyecto" ya resuelto por la página (composición vía
+   * app, no import cruzado de features — mismo patrón que favoriteButton en
+   * DocumentReaderContainer). Si no se pasa, cae al mailto: de siempre. */
+  contactButton?: ReactNode;
+}
 
+export function ResurfaceSection({ contactButton }: ResurfaceSectionProps = {}) {
   return (
     <footer
       id="resurface"
@@ -22,7 +28,7 @@ export function ResurfaceSection() {
             </div>
             <div className="relative w-36 h-36">
               <Image
-                src="/images/logo-playing.png"
+                src={logoPlayingImg}
                 alt="Wiener Hound Lab Coat Mascot"
                 fill
                 className="object-contain"
@@ -38,12 +44,14 @@ export function ResurfaceSection() {
             <h3 className="font-bold text-[#0D0A08] uppercase tracking-wider mb-2 text-base">CONTACTO</h3>
             <p className="text-[#0D0A08] font-bold">wienerhoundstudios@gmail.com</p>
             <p className="text-[#2B1B14] font-medium">Bucaramanga, Colombia [ UTC-05:00 ]</p>
-            <a
-              href="mailto:wienerhoundstudios@gmail.com"
-              className="inline-block mt-3 px-4 py-2 rounded-lg bg-[#8B2FE0] text-white font-bold hover:bg-[#8B2FE0]/90 transition-all shadow-sm"
-            >
-              HABLEMOS DE TU PROYECTO &rarr;
-            </a>
+            {contactButton ?? (
+              <a
+                href="mailto:wienerhoundstudios@gmail.com"
+                className="inline-block mt-3 px-4 py-2 rounded-lg bg-[#8B2FE0] text-white font-bold hover:bg-[#8B2FE0]/90 transition-all shadow-sm"
+              >
+                HABLEMOS DE TU PROYECTO &rarr;
+              </a>
+            )}
           </div>
 
           {/* Column 3: Social & Signature */}
@@ -108,21 +116,21 @@ export function ResurfaceSection() {
         <div className="pt-6 flex flex-wrap justify-between items-center text-xs font-mono font-bold text-[#0D0A08] uppercase tracking-wider gap-4">
           <div>&copy; 2026 Wiener Hound Studios. Todos los derechos excavados.</div>
           
-          {/* Legal Privacy & Terms buttons */}
+          {/* Legal Privacy & Terms links */}
           <div className="flex gap-6 items-center">
-            <button
-              onClick={() => showLegalModal('Política de Privacidad')}
-              className="text-[#0D0A08] hover:text-[#8B2FE0] transition-colors cursor-pointer bg-transparent border-none p-0 font-mono text-xs font-bold uppercase"
+            <Link
+              href="/politica-privacidad"
+              className="text-[#0D0A08] hover:text-[#8B2FE0] transition-colors font-mono text-xs font-bold uppercase"
             >
               Política de Privacidad
-            </button>
+            </Link>
             <span className="text-[#3A3532]/40">•</span>
-            <button
-              onClick={() => showLegalModal('Términos de Servicio')}
-              className="text-[#0D0A08] hover:text-[#8B2FE0] transition-colors cursor-pointer bg-transparent border-none p-0 font-mono text-xs font-bold uppercase"
+            <Link
+              href="/terminos-servicio"
+              className="text-[#0D0A08] hover:text-[#8B2FE0] transition-colors font-mono text-xs font-bold uppercase"
             >
               Términos de Servicio
-            </button>
+            </Link>
           </div>
 
           <div className="text-[#8B2FE0]">EXCAVAMOS EN TODOS LOS ESTRATOS 🐾</div>

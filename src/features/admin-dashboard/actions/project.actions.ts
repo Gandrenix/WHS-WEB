@@ -11,6 +11,31 @@ export interface ActionResponse {
   success?: boolean;
 }
 
+interface DownloadLinkInput {
+  label: string;
+  url: string;
+}
+
+// download_links llega serializado como JSON desde DownloadLinksEditor
+// (a diferencia de gallery_urls, que es solo texto plano por línea, cada
+// enlace de descarga tiene etiqueta + URL, así que no cabe en ese formato).
+function parseDownloadLinks(raw: string | null): DownloadLinkInput[] | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    const cleaned = parsed
+      .filter((item) => item && typeof item.url === 'string' && item.url.trim().length > 0)
+      .map((item) => ({
+        label: typeof item.label === 'string' ? item.label.trim() : '',
+        url: item.url.trim(),
+      }));
+    return cleaned;
+  } catch {
+    return null;
+  }
+}
+
 export async function createProjectAction(
   prevState: ActionResponse,
   formData: FormData
@@ -112,6 +137,7 @@ export async function createProjectAction(
   const rawVideoUrl = (formData.get('video_url') as string) || null;
   const rawAudioUrl = (formData.get('audio_url') as string) || null;
   const rawGalleryUrlsStr = (formData.get('gallery_urls') as string) || null;
+  const rawDownloadLinksStr = (formData.get('download_links') as string) || null;
 
   let galleryUrls: string[] | null = null;
   if (rawGalleryUrlsStr) {
@@ -120,6 +146,8 @@ export async function createProjectAction(
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
   }
+
+  const downloadLinks = parseDownloadLinks(rawDownloadLinksStr);
 
   // 5. Inserción adaptativa en la base de datos
   const insertPayload: Record<string, unknown> = {
@@ -136,6 +164,7 @@ export async function createProjectAction(
   if (rawVideoUrl && rawVideoUrl.trim()) insertPayload.video_url = rawVideoUrl.trim();
   if (rawAudioUrl && rawAudioUrl.trim()) insertPayload.audio_url = rawAudioUrl.trim();
   if (galleryUrls && galleryUrls.length > 0) insertPayload.gallery_urls = galleryUrls;
+  if (downloadLinks && downloadLinks.length > 0) insertPayload.download_links = downloadLinks;
 
   let { error: dbError } = await supabase.from('projects').insert(insertPayload as any);
 
@@ -447,6 +476,43 @@ export async function updateCoverImageAction(
   }
 }
 
+export async function deleteProjectAction(
+  prevState: ActionResponse,
+  formData: FormData
+): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user && process.env.NODE_ENV === 'production') {
+    return { error: 'No autorizado. Inicie sesión como administrador para eliminar obras.' };
+  }
+
+  const targetProjectId = formData.get('target_project_id') as string;
+  if (!targetProjectId) {
+    return { error: 'ID de obra no especificado para eliminar.' };
+  }
+
+  // No se borran los archivos del bucket 'whs-media' (portada/documento/galería):
+  // podrían estar reutilizados en otro lugar, y arriesgar una subida rota por un
+  // fallo de storage a mitad de un delete es peor que dejar un archivo huérfano.
+  const { error: dbError } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', targetProjectId);
+
+  if (dbError) {
+    return { error: `Error al eliminar la obra: ${dbError.message}` };
+  }
+
+  revalidatePath('/');
+  revalidatePath('/categorias');
+  revalidatePath('/admin/dashboard');
+
+  return { success: true };
+}
+
 export async function createActAction(
   prevState: ActionResponse,
   formData: FormData
@@ -605,6 +671,7 @@ export async function updateProjectAction(
   const rawVideoUrl = (formData.get('video_url') as string) || null;
   const rawAudioUrl = (formData.get('audio_url') as string) || null;
   const rawGalleryUrlsStr = (formData.get('gallery_urls') as string) || null;
+  const rawDownloadLinksStr = (formData.get('download_links') as string) || null;
 
   let galleryUrls: string[] | null = null;
   if (rawGalleryUrlsStr) {
@@ -613,6 +680,8 @@ export async function updateProjectAction(
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
   }
+
+  const downloadLinks = parseDownloadLinks(rawDownloadLinksStr);
 
   const videoVal = rawVideoUrl ? rawVideoUrl.trim() : null;
   const audioVal = rawAudioUrl ? rawAudioUrl.trim() : null;
@@ -629,8 +698,15 @@ export async function updateProjectAction(
   if (videoVal !== null) updatePayload.video_url = videoVal;
   if (audioVal !== null) updatePayload.audio_url = audioVal;
   if (galleryUrls !== null) updatePayload.gallery_urls = galleryUrls;
+  if (downloadLinks !== null) updatePayload.download_links = downloadLinks;
 
-  // Failsafe frontmatter encoding for guaranteed persistence
+  // Respaldo en frontmatter para persistencia garantizada. Se aplica a CUALQUIER obra:
+  // si la columna gallery_urls/video_url/audio_url no existe en la base de datos, el
+  // bloque de reintento de abajo la descarta y el dato se perdería en silencio; este
+  // respaldo lo conserva dentro de markdown_content, y projects.repository.ts lo vuelve
+  // a leer vía normalizeProjectMedia.
+  // Ya no genera la "pestaña de Markdown fantasma" que causaba antes, porque hasMarkdown
+  // ahora exige file_type === 'markdown' explícito en vez de mirar markdown_content.
   if (videoVal || audioVal || (galleryUrls && galleryUrls.length > 0)) {
     const existingMd = (updatePayload.markdown_content || rawMarkdownContent || '') as string;
     const { frontmatter, content: textBody } = parseYamlFrontmatter(existingMd);
@@ -711,11 +787,13 @@ export async function updateProjectAction(
     .eq('id', targetProjectId);
 
   // Fallback for missing columns in DB schema
+  const droppedColumns: string[] = [];
   if (dbError && dbError.message.includes('Could not find')) {
     let retries = 0;
     while (dbError && dbError.message.includes('Could not find') && retries < 5) {
       const missingColMatch = dbError.message.match(/Could not find the '([^']+)' column/);
       if (missingColMatch) {
+        droppedColumns.push(missingColMatch[1]);
         delete updatePayload[missingColMatch[1]];
         const retryResult = await supabase
           .from('projects')
@@ -725,6 +803,15 @@ export async function updateProjectAction(
       }
       retries++;
     }
+  }
+
+  // Antes esto se descartaba en silencio y la acción reportaba éxito, así que el
+  // admin veía "guardado" y al recargar el dato había desaparecido, sin ninguna
+  // pista de por qué. Ahora se avisa explícitamente qué columna falta en Supabase.
+  if (droppedColumns.length > 0) {
+    console.warn(
+      `[updateProjectAction] Columnas ausentes en la tabla projects: ${droppedColumns.join(', ')}. Ejecuta supabase_definitive_schema.sql.`
+    );
   }
 
   if (dbError) {

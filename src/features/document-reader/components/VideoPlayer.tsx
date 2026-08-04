@@ -1,11 +1,14 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Video, ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 
 export interface VideoPlayerProps {
   videoUrl: string;
   title: string;
+  favoriteButton?: ReactNode;
 }
 
 export function getVideoEmbedInfo(url: string): { type: 'iframe' | 'direct'; embedUrl: string } {
@@ -48,7 +51,7 @@ export function getVideoEmbedInfo(url: string): { type: 'iframe' | 'direct'; emb
   return { type: 'iframe', embedUrl: trimmed };
 }
 
-export function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
+export function VideoPlayer({ videoUrl, title, favoriteButton }: VideoPlayerProps) {
   const { type, embedUrl } = getVideoEmbedInfo(videoUrl);
 
   return (
@@ -62,12 +65,17 @@ export function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
           >
             <ArrowLeft className="w-4 h-4" /> VOLVER
           </Link>
-          <div className="flex items-center gap-2">
-            <Video className="w-5 h-5 text-[#FFD700]" />
-            <h1 className="text-white text-sm sm:text-base font-black uppercase tracking-tight truncate max-w-md">
-              {title}
-            </h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <Video className="w-5 h-5 text-[#FFD700] shrink-0" />
+            <Breadcrumb
+              items={[
+                { label: 'Inicio', href: '/' },
+                { label: 'Categorías', href: '/categorias' },
+                { label: title },
+              ]}
+            />
           </div>
+          {favoriteButton}
         </div>
 
         <a

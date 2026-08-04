@@ -1,32 +1,67 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import Image from 'next/image';
 
 export function BedrockSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  // offset en rango -1..1, para el parallax de las capas (foto + niebla)
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const rafRef = useRef<number | null>(null);
+  const reducedMotionRef = useRef(false);
 
   useEffect(() => {
+    reducedMotionRef.current =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Todo el efecto vive en transform/CSS vars (compositing por GPU, sin
+    // recalcular layout) y se limita a 1 actualización por frame vía RAF,
+    // para que se sienta liviano incluso en equipos modestos.
     const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        setMousePos({ x, y });
-      }
+      if (rafRef.current !== null) return;
+
+      rafRef.current = requestAnimationFrame(() => {
+        const rect = container.getBoundingClientRect();
+        const ratioX = (e.clientX - rect.left) / rect.width;
+        const ratioY = (e.clientY - rect.top) / rect.height;
+
+        setMousePos({ x: ratioX * 100, y: ratioY * 100 });
+
+        if (!reducedMotionRef.current) {
+          setOffset({ x: ratioX * 2 - 1, y: ratioY * 2 - 1 });
+        }
+
+        rafRef.current = null;
+      });
     };
 
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('mousemove', handleMouseMove);
-    }
+    const handleMouseLeave = () => {
+      setOffset({ x: 0, y: 0 });
+    };
+
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
-      if (container) {
-        container.removeEventListener('mousemove', handleMouseMove);
-      }
+      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseleave', handleMouseLeave);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
   }, []);
+
+  // Capa de foto: se mueve poco (plano de fondo). Capa de niebla/glow: se
+  // mueve más y en sentido contrario (plano cercano). La ilusión de
+  // profundidad sale de esa diferencia de velocidad, no de un mapa 3D real.
+  const photoX = offset.x * 8;
+  const photoY = offset.y * 6;
+  const mistX = offset.x * -20;
+  const mistY = offset.y * -14;
 
   return (
     <section
@@ -40,10 +75,34 @@ export function BedrockSection() {
         } as React.CSSProperties
       }
     >
-      {/* Subtle Ambient Radial Glow */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#8B2FE0]/10 via-transparent to-transparent pointer-events-none"></div>
+      {/* Plano de fondo: la fotografía, con leve deriva hacia el mouse */}
+      <div
+        className="absolute -inset-4 transition-transform duration-300 ease-out will-change-transform"
+        style={{ transform: `translate3d(${photoX}px, ${photoY}px, 0) scale(1.08)` }}
+      >
+        <Image
+          src="/images/pale-veil.png"
+          alt="Silueta observando la ciudad en la niebla nocturna"
+          fill
+          sizes="100vw"
+          className="object-cover opacity-45"
+          priority={false}
+        />
+      </div>
 
-      {/* Content Area with Native High Legibility & Flashlight Spotlight Enhancer */}
+      {/* Velo oscuro para mantener el texto legible sobre la foto */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A08]/60 via-[#0D0A08]/85 to-[#0D0A08] pointer-events-none" />
+
+      {/* Plano cercano: niebla/resplandor púrpura, deriva más rápido y en contra */}
+      <div
+        className="absolute -inset-8 bg-gradient-to-b from-[#8B2FE0]/15 via-transparent to-transparent pointer-events-none transition-transform duration-500 ease-out will-change-transform"
+        style={{ transform: `translate3d(${mistX}px, ${mistY}px, 0)` }}
+      />
+
+      {/* Linterna que sigue al mouse, ya definida en globals.css (.bedrock-flashlight) */}
+      <div className="absolute inset-0 bedrock-flashlight bg-white/[0.04] pointer-events-none" />
+
+      {/* Content Area */}
       <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Header */}

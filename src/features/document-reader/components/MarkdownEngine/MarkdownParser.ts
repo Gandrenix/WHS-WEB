@@ -68,24 +68,63 @@ export function parseYamlFrontmatter(markdown: string): { frontmatter: ParsedFro
   const content = markdown.replace(frontmatterRegex, '');
   const frontmatter: ParsedFrontmatter = {};
 
-  yamlStr.split('\n').forEach((line) => {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex !== -1) {
-      const key = line.slice(0, colonIndex).trim();
-      let value: unknown = line.slice(colonIndex + 1).trim();
-
-      // Clean quotes
-      if (typeof value === 'string') {
-        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-          value = value.slice(1, -1);
-        }
-        if (!isNaN(Number(value))) {
-          value = Number(value);
-        }
-      }
-      frontmatter[key] = value;
+  const unquote = (raw: string): string => {
+    const trimmed = raw.trim();
+    if (
+      (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length >= 2)
+    ) {
+      return trimmed.slice(1, -1);
     }
-  });
+    return trimmed;
+  };
+
+  // Recorrido por índice (no forEach) porque una clave puede estar seguida de una
+  // lista YAML en las líneas siguientes:
+  //   gallery_urls:
+  //     - "https://..."
+  // La versión anterior solo entendía "clave: valor" en una sola línea, así que
+  // gallery_urls quedaba como "" -> Number("") -> 0, y cada elemento "- url" se
+  // interpretaba como su propia clave basura (las URLs contienen ':' por "https:").
+  // Resultado: el respaldo de galería en frontmatter nunca se podía volver a leer.
+  const lines = yamlStr.split('\n');
+  const isListItem = (line: string) => /^\s*-\s+/.test(line);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim() || isListItem(line)) continue;
+
+    const colonIndex = line.indexOf(':');
+    if (colonIndex === -1) continue;
+
+    const key = line.slice(0, colonIndex).trim();
+    const inlineRaw = line.slice(colonIndex + 1).trim();
+
+    // Sin valor en la misma línea: puede ser el encabezado de una lista YAML.
+    if (inlineRaw === '') {
+      const items: string[] = [];
+      let j = i + 1;
+      while (j < lines.length && (isListItem(lines[j]) || !lines[j].trim())) {
+        if (isListItem(lines[j])) {
+          items.push(unquote(lines[j].replace(/^\s*-\s+/, '')));
+        }
+        j++;
+      }
+
+      if (items.length > 0) {
+        frontmatter[key] = items;
+        i = j - 1;
+      } else {
+        frontmatter[key] = '';
+      }
+      continue;
+    }
+
+    const cleaned = unquote(inlineRaw);
+    // Solo convertir a número cuando realmente lo es (Number('') === 0 corrompía
+    // claves vacías, y Number de una URL ya da NaN, así que queda como string).
+    frontmatter[key] = cleaned !== '' && !isNaN(Number(cleaned)) ? Number(cleaned) : cleaned;
+  }
 
   return { frontmatter, content };
 }

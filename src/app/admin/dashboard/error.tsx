@@ -24,7 +24,7 @@ export default function AdminDashboardError({
           >
             Reintentar
           </button>
-          <Link href="/admin" className="btn-secondary text-sm py-2.5 px-6">
+          <Link href="/login" className="btn-secondary text-sm py-2.5 px-6">
             Volver a Login
           </Link>
         </div>

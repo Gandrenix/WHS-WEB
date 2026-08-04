@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import logoImg from '@/shared/assets/logo.png';
 import { MrnaAsciiAnimation } from '@/shared/ui/MrnaAsciiAnimation';
 
 export function InstinctSection() {
@@ -44,7 +45,7 @@ export function InstinctSection() {
 
                 <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 transform hover:scale-105 transition-transform duration-300">
                   <Image
-                    src="/images/logo.png"
+                    src={logoImg}
                     alt="Instinto Dachshund Illustration"
                     fill
                     className="object-contain"

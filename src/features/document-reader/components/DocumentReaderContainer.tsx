@@ -1,34 +1,81 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode, type ComponentType } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Project } from '@/entities/project';
+import { ProjectDescriptionButton } from '@/entities/project';
 import { PdfReader } from './PdfReader';
-import { MarkdownReader } from './MarkdownEngine/MarkdownReader';
+import {
+  MarkdownReader,
+  type ChapterBookmarkButtonShape,
+  type CommentsSectionShape,
+} from './MarkdownEngine/MarkdownReader';
 import { VideoPlayer } from './VideoPlayer';
 import { GalleryViewer } from './GalleryViewer';
+import { DownloadLinksSection } from './DownloadLinksSection';
 import { StarsBackground } from '@/shared/ui/StarsBackground';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-  ArrowLeft, 
-  BookOpen, 
-  Layers, 
-  FileText, 
-  Video, 
-  Music, 
-  Image as ImageIcon 
+import {
+  ArrowLeft,
+  BookOpen,
+  Layers,
+  FileText,
+  Video,
+  Music,
+  Image as ImageIcon
 } from 'lucide-react';
+
+export type ReadingStatus = 'reading' | 'completed';
+export type ProgressUpdater = (
+  chapterNumber: number,
+  totalChapters: number,
+  status: ReadingStatus
+) => void | Promise<void>;
 
 export interface DocumentReaderContainerProps {
   project: Project;
+  /** Botón de favorito ya resuelto por la página (composición vía app, no import cruzado de features) */
+  favoriteButton?: ReactNode;
+  /** Server Action ligada al proyecto actual, para registrar progreso de lectura */
+  onProgressUpdate?: ProgressUpdater;
+  /** Referencia al componente de "guardar capítulo", resuelto por la página */
+  ChapterBookmarkButton?: ComponentType<ChapterBookmarkButtonShape>;
+  /** Capítulos que el usuario ya guardó para esta obra */
+  bookmarkedChapters?: number[];
+  /** Referencia a la sección de comentarios, resuelta por la página (ver app/categorias/[id]/page.tsx) */
+  CommentsSection?: ComponentType<CommentsSectionShape>;
+  /** Id del usuario con sesión activa, para habilitar escritura de comentarios */
+  currentUserId?: string | null;
 }
 
-export function DocumentReaderContainer({ project }: DocumentReaderContainerProps) {
+export function DocumentReaderContainer({
+  project,
+  favoriteButton,
+  onProgressUpdate,
+  ChapterBookmarkButton,
+  bookmarkedChapters,
+  CommentsSection,
+  currentUserId,
+}: DocumentReaderContainerProps) {
   const searchParams = useSearchParams();
   const initialMode = searchParams.get('mode');
+  const chapterParam = searchParams.get('chapter');
+  const initialChapterNumber = chapterParam ? parseInt(chapterParam, 10) : undefined;
 
-  const hasMarkdown = Boolean(project.markdown_content || (project.file_type === 'markdown' && !project.document_url));
+  // Marca la obra como "en lectura" apenas se abre, sin importar el formato.
+  // MarkdownReader luego afina esto con el capítulo y el total reales.
+  useEffect(() => {
+    onProgressUpdate?.(1, 1, 'reading');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id]);
+
+  // Requiere file_type === 'markdown' explícito (no basta con markdown_content truthy):
+  // updateProjectAction guarda un "stub" de frontmatter en markdown_content como respaldo
+  // de video/audio/gallery_urls incluso en obras sin manuscrito real (Apps, Games, etc.),
+  // así que markdown_content por sí solo ya no es señal confiable de que hay un manuscrito.
+  const hasMarkdown = Boolean(project.file_type === 'markdown' && (project.markdown_content || project.document_url));
   const hasPdf = Boolean(project.document_url || project.file_type === 'pdf');
   const hasVideo = Boolean(project.video_url && project.video_url.trim());
   const hasAudio = Boolean(project.audio_url && project.audio_url.trim());
@@ -121,12 +168,44 @@ export function DocumentReaderContainer({ project }: DocumentReaderContainerProp
     );
   };
 
+  // Comentarios generales de la obra (no atados a un capítulo), reutilizados
+  // en los 4 modos que no tienen noción de capítulo. Envuelto acá en el mismo
+  // max-w/padding que usa MarkdownReader internamente, porque CommentsSection
+  // no trae el suyo propio (ver nota en features/comments/components/CommentsSection.tsx).
+  const generalComments = CommentsSection && (
+    <div className="max-w-4xl mx-auto px-6 sm:px-12">
+      <CommentsSection projectId={project.id} chapterNumber={null} currentUserId={currentUserId} />
+    </div>
+  );
+
+  // Botón flotante para ver la sinopsis completa (sin truncar) — el lector
+  // público antes no tenía forma de verla fuera del modo "ficha técnica".
+  const descriptionButton = (
+    <ProjectDescriptionButton
+      title={project.title}
+      description={project.description}
+      imageUrl={project.image_url}
+      category={project.category}
+      status={project.status}
+    />
+  );
+
+  // Zona de descarga (enlaces externos, ej. Google Drive) adjuntados por el admin.
+  const downloadLinksSection = project.download_links && project.download_links.length > 0 && (
+    <div className="max-w-4xl mx-auto px-6 sm:px-12 mb-10">
+      <DownloadLinksSection links={project.download_links} />
+    </div>
+  );
+
   // 1. VIDEO VIEW MODE
   if (activeMode === 'video' && project.video_url) {
     return (
-      <div>
+      <div className="min-h-screen bg-[#0D0A08]">
         {renderFormatTabs()}
-        <VideoPlayer videoUrl={project.video_url} title={project.title} />
+        <VideoPlayer videoUrl={project.video_url} title={project.title} favoriteButton={favoriteButton} />
+        {downloadLinksSection}
+        {generalComments}
+        {descriptionButton}
       </div>
     );
   }
@@ -134,9 +213,12 @@ export function DocumentReaderContainer({ project }: DocumentReaderContainerProp
   // 2. GALLERY VIEW MODE
   if (activeMode === 'gallery' && project.gallery_urls && project.gallery_urls.length > 0) {
     return (
-      <div>
+      <div className="min-h-screen bg-[#0D0A08]">
         {renderFormatTabs()}
-        <GalleryViewer images={project.gallery_urls} title={project.title} />
+        <GalleryViewer images={project.gallery_urls} title={project.title} favoriteButton={favoriteButton} />
+        {downloadLinksSection}
+        {generalComments}
+        {descriptionButton}
       </div>
     );
   }
@@ -144,9 +226,12 @@ export function DocumentReaderContainer({ project }: DocumentReaderContainerProp
   // 3. PDF VIEW MODE
   if (activeMode === 'pdf' && project.document_url) {
     return (
-      <div>
+      <div className="min-h-screen bg-[#0D0A08]">
         {renderFormatTabs()}
-        <PdfReader documentUrl={project.document_url} title={project.title} />
+        <PdfReader documentUrl={project.document_url} title={project.title} favoriteButton={favoriteButton} />
+        {downloadLinksSection}
+        {generalComments}
+        {descriptionButton}
       </div>
     );
   }
@@ -162,18 +247,33 @@ export function DocumentReaderContainer({ project }: DocumentReaderContainerProp
         {renderFormatTabs()}
         {/* Navigation Bar */}
         <nav className="bg-[#120A08] border-b border-white/15 px-6 py-4 flex items-center justify-between sticky top-0 z-40 font-mono text-xs">
-          <Link
-            href="/categorias"
-            className="p-2 bg-black/60 hover:bg-[#8B2FE0] text-white rounded-xl border border-white/20 transition-all font-bold flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" /> CATÁLOGO
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/categorias"
+              className="p-2 bg-black/60 hover:bg-[#8B2FE0] text-white rounded-xl border border-white/20 transition-all font-bold flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" /> CATÁLOGO
+            </Link>
+            {favoriteButton}
+          </div>
           <span className="text-[#C084FC] font-bold uppercase tracking-wider hidden sm:inline">
             SISTEMA ESTRATO &bull; LECTOR DE OBRAS
           </span>
         </nav>
 
-        <MarkdownReader content={rawContent} title={project.title} />
+        <MarkdownReader
+          content={rawContent}
+          title={project.title}
+          projectId={project.id}
+          initialChapterNumber={initialChapterNumber}
+          BookmarkButton={ChapterBookmarkButton}
+          bookmarkedChapters={bookmarkedChapters}
+          onProgressUpdate={onProgressUpdate}
+          CommentsSection={CommentsSection}
+          currentUserId={currentUserId}
+        />
+        {downloadLinksSection}
+        {descriptionButton}
       </div>
     );
   }
@@ -182,12 +282,16 @@ export function DocumentReaderContainer({ project }: DocumentReaderContainerProp
   return (
     <StarsBackground className="min-h-screen bg-[#0D0A08] text-[#F2EDE4] font-mono py-16 px-6">
       <div className="max-w-4xl mx-auto">
-        <Link
-          href="/categorias"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-black/60 hover:bg-[#8B2FE0] text-white rounded-xl border border-white/20 transition-all font-bold text-xs mb-8"
-        >
-          <ArrowLeft className="w-4 h-4" /> VOLVER AL CATÁLOGO
-        </Link>
+        <div className="flex flex-wrap items-center gap-3 mb-8">
+          <Breadcrumb
+            items={[
+              { label: 'Inicio', href: '/' },
+              { label: 'Categorías', href: '/categorias' },
+              { label: project.title },
+            ]}
+          />
+          {favoriteButton}
+        </div>
 
         {renderFormatTabs()}
 
@@ -232,6 +336,12 @@ export function DocumentReaderContainer({ project }: DocumentReaderContainerProp
               </div>
             )}
 
+            {project.download_links && project.download_links.length > 0 && (
+              <div className="mb-6">
+                <DownloadLinksSection links={project.download_links} />
+              </div>
+            )}
+
             <div className="p-5 bg-black/40 border border-white/15 rounded-2xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 text-[#F2EDE4]/70">
                 <BookOpen className="w-4 h-4 text-[#C084FC]" />
@@ -240,6 +350,11 @@ export function DocumentReaderContainer({ project }: DocumentReaderContainerProp
             </div>
           </div>
         </div>
+
+        {/* Ya dentro del max-w-4xl mx-auto ambiente: no necesita el wrapper extra de generalComments */}
+        {CommentsSection && (
+          <CommentsSection projectId={project.id} chapterNumber={null} currentUserId={currentUserId} />
+        )}
       </div>
     </StarsBackground>
   );

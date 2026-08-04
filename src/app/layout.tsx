@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { Inter, IBM_Plex_Mono, Fraunces, Bricolage_Grotesque } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/features/navbar';
+import { getCurrentProfile } from '@/entities/profile/server';
+import { getUnreadNotificationsCount } from '@/entities/notification/server';
+import { NotificationBell } from '@/features/notifications';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const ibmPlexMono = IBM_Plex_Mono({
@@ -24,18 +27,23 @@ export const metadata: Metadata = {
   description: 'Todo lo que hacemos empieza excavando. Atelier de excavación obsesiva: Bioinformática, Ingeniería Creativa y Pale Veil.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const profile = await getCurrentProfile();
+  const notificationBell = profile ? (
+    <NotificationBell initialUnreadCount={await getUnreadNotificationsCount(profile.id)} />
+  ) : null;
+
   return (
     <html
       lang="es"
       className={`${inter.variable} ${ibmPlexMono.variable} ${fraunces.variable} ${bricolage.variable} scroll-smooth`}
     >
       <body className="bg-[#F2EDE4] text-[#3A3532] font-sans overflow-x-hidden antialiased">
-        <Navbar />
+        <Navbar profile={profile} notificationBell={notificationBell} />
         {children}
       </body>
     </html>

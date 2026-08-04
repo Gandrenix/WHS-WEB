@@ -1,15 +1,15 @@
 'use client';
 
 // Client component for interactive reading, audio triggers, chapters and dynamic fonts
-import { useEffect, useRef, useState } from 'react';
-import { 
-  Volume2, 
-  VolumeX, 
-  BookOpen, 
-  ChevronLeft, 
-  ChevronRight, 
-  List, 
-  ChevronDown, 
+import { useEffect, useRef, useState, type ComponentType } from 'react';
+import {
+  Volume2,
+  VolumeX,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  ChevronDown,
   X,
   Layers
 } from 'lucide-react';
@@ -17,16 +17,66 @@ import { parseStoryChapters, parseInlineStyles } from './MarkdownParser';
 import { StoryCallout } from './StoryCallout';
 import { StoryDialogue } from './StoryDialogue';
 import { DropCapTilt } from './DropCapTilt';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import Image from 'next/image';
+
+export type ReadingStatus = 'reading' | 'completed';
+
+// Forma estructural mínima del botón de "guardar capítulo" — se declara aquí (no se
+// importa desde `reader-dashboard`) para no violar boundaries feature->feature.
+// El componente real que llega por props cumple esta forma por estructura, no por herencia.
+export interface ChapterBookmarkButtonShape {
+  projectId: string;
+  chapterNumber: number;
+  chapterTitle?: string | null;
+  initialBookmarked: boolean;
+}
+
+// Misma lógica de composición que ChapterBookmarkButtonShape: se declara acá
+// (no se importa desde `comments`) para no violar boundaries feature->feature.
+export interface CommentsSectionShape {
+  projectId: string;
+  chapterNumber: number | null;
+  chapterTitle?: string | null;
+  currentUserId?: string | null;
+}
 
 export interface MarkdownReaderProps {
   content: string;
   title?: string;
+  /** Id del proyecto, solo necesario si se quiere habilitar "guardar capítulo" */
+  projectId?: string;
+  /** Capítulo inicial (1-based) para abrir directo desde un enlace guardado, ej. ?chapter=3 */
+  initialChapterNumber?: number;
+  /** Referencia al componente de bookmark (resuelto por la página, ver DocumentReaderContainer) */
+  BookmarkButton?: ComponentType<ChapterBookmarkButtonShape>;
+  /** Números de capítulo que el usuario ya guardó para esta obra */
+  bookmarkedChapters?: number[];
+  /** Registra el capítulo alcanzado (server action ligada al proyecto, ver DocumentReaderContainer) */
+  onProgressUpdate?: (chapterNumber: number, totalChapters: number, status: ReadingStatus) => void | Promise<void>;
+  /** Referencia a la sección de comentarios (resuelta por la página, ver DocumentReaderContainer) */
+  CommentsSection?: ComponentType<CommentsSectionShape>;
+  /** Id del usuario con sesión activa, para habilitar escritura de comentarios */
+  currentUserId?: string | null;
 }
 
-export function MarkdownReader({ content, title }: MarkdownReaderProps) {
+export function MarkdownReader({
+  content,
+  title,
+  projectId,
+  initialChapterNumber,
+  BookmarkButton,
+  bookmarkedChapters = [],
+  onProgressUpdate,
+  CommentsSection,
+  currentUserId,
+}: MarkdownReaderProps) {
   const { frontmatter, chapters } = parseStoryChapters(content);
-  const [activeChapterIndex, setActiveChapterIndex] = useState(0);
+  const [activeChapterIndex, setActiveChapterIndex] = useState(() => {
+    if (!initialChapterNumber) return 0;
+    const index = initialChapterNumber - 1;
+    return index >= 0 && index < chapters.length ? index : 0;
+  });
   const [showChapterDrawer, setShowChapterDrawer] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -62,6 +112,14 @@ export function MarkdownReader({ content, title }: MarkdownReaderProps) {
     };
   }, [bgmUrl]);
 
+  // Reporta el capítulo alcanzado cada vez que cambia; el último capítulo se marca como completado.
+  useEffect(() => {
+    if (!onProgressUpdate || chapters.length === 0) return;
+    const isLastChapter = activeChapterIndex === chapters.length - 1;
+    onProgressUpdate(activeChapterIndex + 1, chapters.length, isLastChapter ? 'completed' : 'reading');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChapterIndex, chapters.length]);
+
   const toggleAudio = () => {
     if (!audioRef.current) return;
     if (isPlayingAudio) {
@@ -88,6 +146,17 @@ export function MarkdownReader({ content, title }: MarkdownReaderProps) {
     }
   };
 
+  const obraTitle = (frontmatter.title as string) || title || 'Obra';
+  const isChaptered = chapters.length > 1;
+  const breadcrumbItems = [
+    { label: 'Inicio', href: '/' },
+    { label: 'Categorías', href: '/categorias' },
+    isChaptered && projectId
+      ? { label: obraTitle, href: `/categorias/${projectId}` }
+      : { label: obraTitle },
+    ...(isChaptered ? [{ label: currentChapter?.title || `Capítulo ${activeChapterIndex + 1}` }] : []),
+  ];
+
   return (
     <article
       ref={articleRef}
@@ -112,6 +181,10 @@ export function MarkdownReader({ content, title }: MarkdownReaderProps) {
 
       {/* Chapter Title / Frontmatter Header */}
       <header className="text-center mb-12 pb-8 border-b border-white/15">
+        <div className="flex justify-center mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+        </div>
+
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#8B2FE0]/25 text-[#C084FC] font-mono text-[11px] font-bold uppercase tracking-widest mb-4 border border-[#8B2FE0]/40">
           <BookOpen className="w-3.5 h-3.5" /> LECTURA INMERSIVA ESTRATO
         </div>
@@ -148,6 +221,17 @@ export function MarkdownReader({ content, title }: MarkdownReaderProps) {
               <span className="truncate max-w-[200px] sm:max-w-[300px]">{currentChapter.title}</span>
               <ChevronDown className="w-4 h-4 text-[#C084FC]" />
             </button>
+          </div>
+        )}
+
+        {BookmarkButton && projectId && (
+          <div className="mt-4 flex justify-center">
+            <BookmarkButton
+              projectId={projectId}
+              chapterNumber={activeChapterIndex + 1}
+              chapterTitle={currentChapter?.title}
+              initialBookmarked={bookmarkedChapters.includes(activeChapterIndex + 1)}
+            />
           </div>
         )}
       </header>
@@ -381,6 +465,15 @@ export function MarkdownReader({ content, title }: MarkdownReaderProps) {
           </button>
         </div>
       </footer>
+
+      {CommentsSection && projectId && (
+        <CommentsSection
+          projectId={projectId}
+          chapterNumber={activeChapterIndex + 1}
+          chapterTitle={currentChapter?.title}
+          currentUserId={currentUserId}
+        />
+      )}
     </article>
   );
 }

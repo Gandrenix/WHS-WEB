@@ -1,22 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-  Image as ImageIcon, 
-  ArrowLeft, 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  Image as ImageIcon,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Maximize2
 } from 'lucide-react';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
+import { GalleryFocusRail } from './GalleryFocusRail';
 
 export interface GalleryViewerProps {
   images: string[];
   title: string;
+  favoriteButton?: ReactNode;
 }
 
-export function GalleryViewer({ images, title }: GalleryViewerProps) {
+export function GalleryViewer({ images, title, favoriteButton }: GalleryViewerProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
@@ -41,12 +44,17 @@ export function GalleryViewer({ images, title }: GalleryViewerProps) {
           >
             <ArrowLeft className="w-4 h-4" /> VOLVER
           </Link>
-          <div className="flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-[#FF69B4]" />
-            <h1 className="text-white text-sm sm:text-base font-black uppercase tracking-tight truncate max-w-md">
-              {title}
-            </h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <ImageIcon className="w-5 h-5 text-[#FF69B4] shrink-0" />
+            <Breadcrumb
+              items={[
+                { label: 'Inicio', href: '/' },
+                { label: 'Categorías', href: '/categorias' },
+                { label: title },
+              ]}
+            />
           </div>
+          {favoriteButton}
         </div>
 
         <div className="text-xs font-bold text-[#FF69B4] bg-[#FF69B4]/10 px-3 py-1.5 rounded-xl border border-[#FF69B4]/30">
@@ -62,6 +70,7 @@ export function GalleryViewer({ images, title }: GalleryViewerProps) {
             alt={`${title} - Imagen ${activeIndex + 1}`}
             fill
             className="object-contain"
+            unoptimized
           />
 
           {/* Navigation Controls */}
@@ -94,23 +103,15 @@ export function GalleryViewer({ images, title }: GalleryViewerProps) {
           </button>
         </div>
 
-        {/* Thumbnail Carousel Bar */}
+        {/* Riel de miniaturas con perspectiva 3D */}
         {images.length > 1 && (
-          <div className="flex items-center gap-3 overflow-x-auto max-w-full p-2 bg-black/60 rounded-2xl border border-white/15">
-            {images.map((img, idx) => (
-              <button
-                type="button"
-                key={idx}
-                onClick={() => setActiveIndex(idx)}
-                className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                  idx === activeIndex
-                    ? 'border-[#FF69B4] scale-105 shadow-xl'
-                    : 'border-white/20 opacity-60 hover:opacity-100'
-                }`}
-              >
-                <Image src={img} alt={`Thumb ${idx + 1}`} fill className="object-cover" />
-              </button>
-            ))}
+          <div className="w-full max-w-2xl bg-black/60 rounded-2xl border border-white/15 px-4">
+            <GalleryFocusRail
+              images={images}
+              activeIndex={activeIndex}
+              onSelect={setActiveIndex}
+              title={title}
+            />
           </div>
         )}
       </main>
@@ -122,7 +123,7 @@ export function GalleryViewer({ images, title }: GalleryViewerProps) {
           className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn"
         >
           <div className="relative w-full h-full max-w-7xl max-h-[90vh]">
-            <Image src={currentImage} alt="Fullscreen View" fill className="object-contain" />
+            <Image src={currentImage} alt="Fullscreen View" fill className="object-contain" unoptimized />
           </div>
         </div>
       )}

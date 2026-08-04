@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import logoPlayingImg from '@/shared/assets/logo-playing.png';
 import { Container } from '@/shared/ui/Container';
 
 export function HeroEstrato() {
@@ -40,7 +41,7 @@ export function HeroEstrato() {
         {/* Dachshund Mascot Image */}
         <div className="relative w-48 h-32 md:w-60 md:h-40 mb-10 transform hover:scale-105 transition-transform duration-300">
           <Image
-            src="/images/logo-playing.png"
+            src={logoPlayingImg}
             alt="Wiener Hound Dachshund Mascot"
             fill
             className="object-contain drop-shadow-md"

@@ -1,0 +1,129 @@
+/* Breadcrumb "estrato" — segmentos con punta biselada y aleta que se
+   traslapan entre sí, como capas de corte geológico. Adaptado de un
+   patrón de clip-path + container queries a la paleta de marca WHS. */
+
+.container {
+  --edge-offset: clamp(6px, 1.2vw, 14px);
+  --gap: 4px;
+
+  --crumb-inactive-bg: #2b1b14;
+  --crumb-inactive-fg: rgba(242, 237, 228, 0.65);
+  --crumb-inactive-bg-hover: #8b2fe0;
+  --crumb-inactive-fg-hover: #ffffff;
+
+  --crumb-active-bg: #c084fc;
+  --crumb-active-fg: #0d0a08;
+  --crumb-active-bg-hover: color-mix(in oklab, #c084fc, white 20%);
+  --crumb-active-fg-hover: #0d0a08;
+
+  /* Importante: NO usar container-type/contain aquí. Un query container sin
+     ancho explícito puede colapsar a 0px porque la contención le quita la
+     señal de "tamaño según contenido" que necesita en un flex item. */
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crumb {
+  display: flex;
+}
+
+.crumb:not(:first-child) {
+  margin-left: calc(var(--edge-offset) * -1);
+}
+
+.crumbLink {
+  --breadcrumb-padding-inline: clamp(0.55rem, 0.4rem + 1vw, 0.95rem);
+  --breadcrumb-radius: 6px;
+  --crumb-bg: var(--crumb-inactive-bg);
+  --crumb-fg: var(--crumb-inactive-fg);
+
+  background: var(--crumb-bg);
+  color: var(--crumb-fg);
+
+  display: flex;
+  align-items: center;
+
+  padding-block: 0.55em 0.6em;
+  min-height: 2.4em;
+  padding-left: var(--breadcrumb-padding-left, var(--breadcrumb-padding-inline));
+  padding-right: var(--breadcrumb-padding-right, var(--breadcrumb-padding-inline));
+
+  text-decoration: none;
+  user-select: none;
+  white-space: nowrap;
+
+  transition-property: background, color;
+  transition-duration: 0.25s;
+  transition-timing-function: ease-out;
+}
+
+a.crumbLink:hover {
+  --crumb-bg: var(--crumb-inactive-bg-hover);
+  --crumb-fg: var(--crumb-inactive-fg-hover);
+}
+
+/* Primer segmento: esquina redondeada a la izquierda */
+.crumb:first-child .crumbLink {
+  --breadcrumb-padding-left: var(--breadcrumb-padding-inline);
+  border-top-left-radius: var(--breadcrumb-radius);
+  border-bottom-left-radius: var(--breadcrumb-radius);
+}
+
+/* Segmentos intermedios: compensan la aleta izquierda con más padding */
+.crumb:not(:first-child):not(:last-child) .crumbLink {
+  --breadcrumb-padding-left: calc(var(--breadcrumb-padding-inline) + var(--edge-offset));
+}
+
+/* Último segmento = página / capítulo actual */
+.crumb[aria-current='page'] .crumbLink {
+  --crumb-bg: var(--crumb-active-bg);
+  --crumb-fg: var(--crumb-active-fg);
+  --breadcrumb-padding-left: calc(var(--breadcrumb-padding-inline) + var(--edge-offset));
+  --breadcrumb-padding-right: var(--breadcrumb-padding-inline);
+
+  border-top-right-radius: var(--breadcrumb-radius);
+  border-bottom-right-radius: var(--breadcrumb-radius);
+  font-weight: 800;
+  cursor: default;
+}
+
+.crumb[aria-current='page'] .crumbLink:hover {
+  --crumb-bg: var(--crumb-active-bg-hover);
+  --crumb-fg: var(--crumb-active-fg-hover);
+}
+
+/* Punta derecha en flecha para todos menos el último (mejora progresiva:
+   corner-shape no tiene soporte universal, degrada a esquina redondeada) */
+.crumb:not(:last-child) .crumbLink {
+  --breadcrumb-padding-right: calc(var(--breadcrumb-padding-inline) + (var(--edge-offset) / 1.4));
+  border-top-right-radius: var(--edge-offset) 50%;
+  border-bottom-right-radius: var(--edge-offset) 50%;
+  corner-top-right-shape: bevel;
+  corner-bottom-right-shape: bevel;
+}
+
+/* Aleta izquierda para todos menos el primero */
+.crumb:not(:first-child) .crumbLink {
+  clip-path: polygon(100% 0, 100% 100%, 0% 100%, var(--edge-offset) 50%, 0% 0%);
+}
+
+@media (max-width: 480px) {
+  .list {
+    font-size: 0.66rem;
+  }
+}

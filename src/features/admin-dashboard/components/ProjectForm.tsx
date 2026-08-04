@@ -35,6 +35,8 @@ import {
   type ActionResponse 
 } from '../actions/project.actions';
 import { MarkdownEditorWithPreview } from '@/features/document-reader/components/MarkdownEngine/MarkdownEditorWithPreview';
+import { GalleryUrlsEditor } from './GalleryUrlsEditor';
+import { DownloadLinksEditor } from './DownloadLinksEditor';
 import { 
   parseStoryChapters, 
   serializeStoryChapters, 
@@ -58,6 +60,7 @@ export interface ExistingProjectOption {
   video_url?: string | null;
   audio_url?: string | null;
   gallery_urls?: string[] | null;
+  download_links?: { label: string; url: string }[] | null;
 }
 
 interface ActGroup {
@@ -96,6 +99,8 @@ export function ProjectForm({ projects = [] }: { projects?: ExistingProjectOptio
   const [preview, setPreview] = useState<string | null>(null);
   const [docType, setDocType] = useState<'none' | 'pdf' | 'markdown'>('none');
   const [selectedAct, setSelectedAct] = useState<string>('');
+  const [createGalleryUrls, setCreateGalleryUrls] = useState<string>('');
+  const [createDownloadLinks, setCreateDownloadLinks] = useState<string>('');
 
   // Form States for Editing Existing Work
   const [editTitle, setEditTitle] = useState<string>('');
@@ -106,6 +111,7 @@ export function ProjectForm({ projects = [] }: { projects?: ExistingProjectOptio
   const [editVideoUrl, setEditVideoUrl] = useState<string>('');
   const [editAudioUrl, setEditAudioUrl] = useState<string>('');
   const [editGalleryUrls, setEditGalleryUrls] = useState<string>('');
+  const [editDownloadLinks, setEditDownloadLinks] = useState<string>('');
   const [editMarkdownContent, setEditMarkdownContent] = useState<string>('');
 
   // Chapter Editing States inside CMS Studio
@@ -164,6 +170,7 @@ export function ProjectForm({ projects = [] }: { projects?: ExistingProjectOptio
       setEditVideoUrl(currentProject.video_url || '');
       setEditAudioUrl(currentProject.audio_url || '');
       setEditGalleryUrls(currentProject.gallery_urls ? currentProject.gallery_urls.join('\n') : '');
+      setEditDownloadLinks(currentProject.download_links ? JSON.stringify(currentProject.download_links) : '');
       setEditMarkdownContent(currentProject.markdown_content || '');
       setPreview(currentProject.image_url || null);
     }
@@ -503,10 +510,10 @@ export function ProjectForm({ projects = [] }: { projects?: ExistingProjectOptio
                 defaultValue="apps-software"
                 className="w-full p-3.5 border border-white/20 bg-black/60 text-white rounded-xl appearance-none text-xs font-mono font-bold"
               >
-                <option value="apps-software" className="bg-[#0D0A08]">Apps &amp; BioTech (apps-software)</option>
-                <option value="manga" className="bg-[#0D0A08]">Manga &amp; Cómics</option>
-                <option value="anime" className="bg-[#0D0A08]">Anime &amp; Animación</option>
-                <option value="visual-novel" className="bg-[#0D0A08]">Visual Novel</option>
+                <option value="apps-software" className="bg-[#0D0A08]">Apps &amp; BioTech</option>
+                <option value="animaciones" className="bg-[#0D0A08]">Animaciones</option>
+                <option value="visual-novel" className="bg-[#0D0A08]">Visual Novels</option>
+                <option value="games" className="bg-[#0D0A08]">Games</option>
               </select>
             </div>
           </div>
@@ -640,13 +647,24 @@ export function ProjectForm({ projects = [] }: { projects?: ExistingProjectOptio
 
             <div>
               <label className="block mb-1 text-[11px] font-bold text-white uppercase">
-                🖼️ Galería de Ilustraciones (URLs de Imágenes, una por línea)
+                🖼️ Galería de Ilustraciones (una fila por imagen, con vista previa)
               </label>
-              <textarea
+              <GalleryUrlsEditor
                 name="gallery_urls"
-                rows={3}
-                placeholder="https://ejemplo.com/imagen1.jpg&#10;https://ejemplo.com/imagen2.png"
-                className="w-full p-3 border border-white/20 bg-black/60 text-white rounded-xl text-xs font-mono resize-none"
+                value={createGalleryUrls}
+                onChange={setCreateGalleryUrls}
+                accentColor="#8B2FE0"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 text-[11px] font-bold text-white uppercase">
+                ⬇️ Enlaces de Descarga Externos (ej. Google Drive)
+              </label>
+              <DownloadLinksEditor
+                name="download_links"
+                value={createDownloadLinks}
+                onChange={setCreateDownloadLinks}
               />
             </div>
           </div>
@@ -772,10 +790,10 @@ export function ProjectForm({ projects = [] }: { projects?: ExistingProjectOptio
                     onChange={(e) => setEditCategory(e.target.value)}
                     className="w-full p-3.5 border border-white/20 bg-black/60 text-white rounded-xl appearance-none text-xs font-mono font-bold"
                   >
-                    <option value="apps-software" className="bg-[#0D0A08]">Apps &amp; BioTech (apps-software)</option>
-                    <option value="manga" className="bg-[#0D0A08]">Manga &amp; Cómics</option>
-                    <option value="anime" className="bg-[#0D0A08]">Anime &amp; Animación</option>
-                    <option value="visual-novel" className="bg-[#0D0A08]">Visual Novel</option>
+                    <option value="apps-software" className="bg-[#0D0A08]">Apps &amp; BioTech</option>
+                    <option value="animaciones" className="bg-[#0D0A08]">Animaciones</option>
+                    <option value="visual-novel" className="bg-[#0D0A08]">Visual Novels</option>
+                    <option value="games" className="bg-[#0D0A08]">Games</option>
                   </select>
                 </div>
               </div>
@@ -917,15 +935,24 @@ export function ProjectForm({ projects = [] }: { projects?: ExistingProjectOptio
 
                 <div>
                   <label className="block mb-1 text-[11px] font-bold text-white uppercase">
-                    🖼️ Galería de Ilustraciones (URLs de Imágenes, una por línea)
+                    🖼️ Galería de Ilustraciones (una fila por imagen, con vista previa)
                   </label>
-                  <textarea
+                  <GalleryUrlsEditor
                     name="gallery_urls"
-                    rows={3}
                     value={editGalleryUrls}
-                    onChange={(e) => setEditGalleryUrls(e.target.value)}
-                    placeholder="https://ejemplo.com/imagen1.jpg&#10;https://ejemplo.com/imagen2.png"
-                    className="w-full p-3 border border-white/20 bg-black/60 text-white rounded-xl text-xs font-mono resize-none"
+                    onChange={setEditGalleryUrls}
+                    accentColor="#7ED957"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-[11px] font-bold text-white uppercase">
+                    ⬇️ Enlaces de Descarga Externos (ej. Google Drive)
+                  </label>
+                  <DownloadLinksEditor
+                    name="download_links"
+                    value={editDownloadLinks}
+                    onChange={setEditDownloadLinks}
                   />
                 </div>
               </div>
@@ -983,10 +1010,6 @@ export function ProjectForm({ projects = [] }: { projects?: ExistingProjectOptio
               className="w-full p-3.5 border border-white/20 bg-black/60 text-white rounded-xl appearance-none text-xs font-mono font-bold"
             >
               <option value="">-- SELECCIONAR OBRA REGISTRADA --</option>
-              <option value="demo-manga-1" className="bg-[#0D0A08]">[MANGA] Umbral</option>
-              <option value="demo-app-1" className="bg-[#0D0A08]">[APPS] SomaCore App</option>
-              <option value="demo-vn-1" className="bg-[#0D0A08]">[VISUAL NOVEL] The Pale Veil</option>
-              <option value="demo-anime-1" className="bg-[#0D0A08]">[ANIME] Código Estelar</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id} className="bg-[#0D0A08]">
                   [{p.category.toUpperCase()}] {p.title}
@@ -1119,10 +1142,6 @@ export function ProjectForm({ projects = [] }: { projects?: ExistingProjectOptio
               className="w-full p-3.5 border border-white/20 bg-black/60 text-white rounded-xl appearance-none text-xs font-mono font-bold"
             >
               <option value="">-- SELECCIONAR OBRA PARA EDITAR --</option>
-              <option value="demo-manga-1" className="bg-[#0D0A08]">[MANGA] Umbral</option>
-              <option value="demo-app-1" className="bg-[#0D0A08]">[APPS] SomaCore App</option>
-              <option value="demo-vn-1" className="bg-[#0D0A08]">[VISUAL NOVEL] The Pale Veil</option>
-              <option value="demo-anime-1" className="bg-[#0D0A08]">[ANIME] Código Estelar</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id} className="bg-[#0D0A08]">
                   [{p.category.toUpperCase()}] {p.title}

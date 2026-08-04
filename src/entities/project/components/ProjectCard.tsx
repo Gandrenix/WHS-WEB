@@ -20,16 +20,36 @@ export function ProjectCard({ project, variant = 'light' }: ProjectCardProps) {
   const categoryColors: Record<string, string> = {
     apps: 'bg-[#7ED957]/20 text-[#2b6b15] border-[#7ED957]/60 font-bold',
     app: 'bg-[#7ED957]/20 text-[#2b6b15] border-[#7ED957]/60 font-bold',
+    'apps-software': 'bg-[#7ED957]/20 text-[#2b6b15] border-[#7ED957]/60 font-bold',
+    // "Animaciones" fusiona lo que antes eran Manga y Anime como categorías separadas
+    animaciones: 'bg-[#8B2FE0]/15 text-[#8B2FE0] border-[#8B2FE0]/40',
     manga: 'bg-[#8B2FE0]/15 text-[#8B2FE0] border-[#8B2FE0]/40',
-    anime: 'bg-[#7ED957]/15 text-[#2b6b15] border-[#7ED957]/50',
+    anime: 'bg-[#8B2FE0]/15 text-[#8B2FE0] border-[#8B2FE0]/40',
     'visual-novel': 'bg-[#C084FC]/15 text-[#C084FC] border-[#C084FC]/40',
+    games: 'bg-[#FFD700]/15 text-[#8a6d00] border-[#FFD700]/50',
   };
 
   const currentCategoryColor =
     categoryColors[project.category.toLowerCase()] ||
     'bg-[#8B2FE0]/15 text-[#8B2FE0] border-[#8B2FE0]/40';
 
-  const hasMarkdown = Boolean(project.markdown_content || (project.file_type === 'markdown' && !project.document_url));
+  // Normaliza nombres viejos de categoría (manga/anime/apps-software) al
+  // texto visible correcto, aunque en la base de datos quede el valor legado
+  const categoryLabels: Record<string, string> = {
+    apps: 'Apps',
+    app: 'Apps',
+    'apps-software': 'Apps',
+    animaciones: 'Animaciones',
+    manga: 'Animaciones',
+    anime: 'Animaciones',
+    'visual-novel': 'Visual Novels',
+    games: 'Games',
+  };
+  const currentCategoryLabel = categoryLabels[project.category.toLowerCase()] || project.category;
+
+  // Requiere file_type === 'markdown' explícito: markdown_content puede contener solo un
+  // stub de frontmatter (respaldo de video/audio/gallery_urls) en obras sin manuscrito real.
+  const hasMarkdown = Boolean(project.file_type === 'markdown' && (project.markdown_content || project.document_url));
   const hasPdf = Boolean(project.document_url || project.file_type === 'pdf');
   const hasVideo = Boolean(project.video_url && project.video_url.trim());
   const hasAudio = Boolean(project.audio_url && project.audio_url.trim());
@@ -68,7 +88,7 @@ export function ProjectCard({ project, variant = 'light' }: ProjectCardProps) {
             <span
               className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider border backdrop-blur-md ${currentCategoryColor}`}
             >
-              {project.category}
+              {currentCategoryLabel}
             </span>
           </div>
           {/* Status Badge */}

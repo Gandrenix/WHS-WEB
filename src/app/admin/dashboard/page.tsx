@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { createClient } from '@/shared/lib/supabase/server';
 import { getAllProjects } from '@/entities/project/server';
-import { ProjectList } from '@/features/admin-dashboard';
+import { getProfile } from '@/entities/profile/server';
+import { getTotalCommentsCount } from '@/entities/comment/server';
+import { ProjectList, AdminSidebar } from '@/features/admin-dashboard';
 import { SignOutButton } from '@/features/auth';
 
 export default async function DashboardPage() {
@@ -13,75 +14,29 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/admin');
+    redirect('/login');
+  }
+
+  // Defensa en profundidad: el middleware ya filtra por rol, pero esta página
+  // también verifica por si se accede en un contexto donde el middleware no corrió.
+  const profile = await getProfile(user.id);
+  if (profile?.role !== 'admin') {
+    redirect('/biblioteca');
   }
 
   const projects = await getAllProjects();
   const lightweightProjects = projects.map(({ markdown_content, ...rest }) => rest);
+  const commentCount = await getTotalCommentsCount();
 
   return (
     <div className="min-h-screen bg-[#0D0A08] text-[#F2EDE4] flex font-mono">
-      {/* Sidebar */}
-      <aside className="w-72 bg-[#120A08] border-r border-white/15 flex flex-col hidden md:flex sticky top-0 h-screen">
-        <div className="p-6 border-b border-white/15">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-8 h-8">
-              <Image
-                src="/images/logo-playing.png"
-                alt="WHS Logo"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div>
-              <span className="font-mono font-black text-white text-sm tracking-tight block">
-                WH-STUDIOS
-              </span>
-              <span className="text-[9px] text-[#7ED957] font-bold tracking-widest uppercase">
-                CONTROL ESTRATO
-              </span>
-            </div>
-          </Link>
-        </div>
-
-        <nav className="flex-1 p-4 flex flex-col gap-2">
-          <Link
-            href="/admin/dashboard"
-            className="px-4 py-3 bg-[#8B2FE0]/20 text-[#C084FC] rounded-xl text-xs font-bold border border-[#8B2FE0]/40 flex items-center justify-between"
-          >
-            <span>📁 PUBLICACIONES</span>
-            <span className="px-2 py-0.5 bg-[#8B2FE0] text-white rounded text-[10px]">
-              {projects.length}
-            </span>
-          </Link>
-          <Link
-            href="/admin/dashboard/nuevo"
-            className="px-4 py-3 text-[#F2EDE4]/70 hover:bg-white/5 hover:text-white rounded-xl text-xs font-bold transition-colors border border-transparent"
-          >
-            + AÑADIR NUEVA OBRA
-          </Link>
-          <Link
-            href="/categorias"
-            target="_blank"
-            className="px-4 py-3 text-[#F2EDE4]/70 hover:bg-white/5 hover:text-white rounded-xl text-xs font-bold transition-colors border border-transparent"
-          >
-            🌐 VER CATÁLOGO VIVO &rarr;
-          </Link>
-        </nav>
-
-        <div className="p-4 border-t border-white/15">
-          <div className="bg-black/50 rounded-xl p-4 border border-white/15">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-[#7ED957] animate-pulse"></span>
-              <span className="text-[10px] text-[#7ED957] font-bold uppercase">ADMINISTRADOR ACTIVO</span>
-            </div>
-            <p className="text-xs text-white font-bold truncate mb-3" title={user.email}>
-              {user.email}
-            </p>
-            <SignOutButton />
-          </div>
-        </div>
-      </aside>
+      <AdminSidebar
+        activeSection="publicaciones"
+        userEmail={user.email || ''}
+        signOutButton={<SignOutButton />}
+        projectCount={projects.length}
+        commentCount={commentCount}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
@@ -111,7 +66,7 @@ export default async function DashboardPage() {
                 CATEGORÍAS DE OBRA
               </div>
               <div className="text-xs font-bold text-[#F2EDE4] mt-2">
-                APPS &bull; MANGA &bull; ANIME &bull; VN
+                APPS &bull; ANIMACIONES &bull; VISUAL NOVELS &bull; GAMES
               </div>
             </div>
           </div>

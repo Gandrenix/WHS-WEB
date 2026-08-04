@@ -1,12 +1,10 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
+import logoPlayingImg from '@/shared/assets/logo-playing.png';
 
 export function Footer() {
-  const showLegalModal = (title: string) => {
-    alert(`${title}: Próximamente la versión completa del documento legal de Wiener Hound Studios.`);
-  };
-
   return (
     <footer
       id="resurface"
@@ -22,7 +20,7 @@ export function Footer() {
             </div>
             <div className="relative w-36 h-36">
               <Image
-                src="/images/logo-playing.png"
+                src={logoPlayingImg}
                 alt="Wiener Hound Lab Coat Mascot"
                 fill
                 className="object-contain"
@@ -109,19 +107,19 @@ export function Footer() {
           <div>&copy; 2026 Wiener Hound Studios. Todos los derechos excavados.</div>
           
           <div className="flex gap-6 items-center">
-            <button
-              onClick={() => showLegalModal('Política de Privacidad')}
-              className="text-[#0D0A08] hover:text-[#8B2FE0] transition-colors cursor-pointer bg-transparent border-none p-0 font-mono text-xs font-bold uppercase"
+            <Link
+              href="/politica-privacidad"
+              className="text-[#0D0A08] hover:text-[#8B2FE0] transition-colors font-mono text-xs font-bold uppercase"
             >
               Política de Privacidad
-            </button>
+            </Link>
             <span className="text-[#3A3532]/40">•</span>
-            <button
-              onClick={() => showLegalModal('Términos de Servicio')}
-              className="text-[#0D0A08] hover:text-[#8B2FE0] transition-colors cursor-pointer bg-transparent border-none p-0 font-mono text-xs font-bold uppercase"
+            <Link
+              href="/terminos-servicio"
+              className="text-[#0D0A08] hover:text-[#8B2FE0] transition-colors font-mono text-xs font-bold uppercase"
             >
               Términos de Servicio
-            </button>
+            </Link>
           </div>
 
           <div className="text-[#8B2FE0]">EXCAVAMOS EN TODOS LOS ESTRATOS 🐾</div>

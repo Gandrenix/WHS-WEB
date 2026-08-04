@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Download, Maximize, FileText, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 
 export interface PdfReaderProps {
   documentUrl: string;
   title: string;
+  favoriteButton?: ReactNode;
 }
 
-export function PdfReader({ documentUrl, title }: PdfReaderProps) {
+export function PdfReader({ documentUrl, title, favoriteButton }: PdfReaderProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
@@ -35,12 +37,17 @@ export function PdfReader({ documentUrl, title }: PdfReaderProps) {
           >
             <ArrowLeft className="w-4 h-4" /> VOLVER
           </Link>
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#7ED957]" />
-            <h1 className="text-white text-sm sm:text-base font-black uppercase tracking-tight truncate max-w-md">
-              {title}
-            </h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className="w-5 h-5 text-[#7ED957] shrink-0" />
+            <Breadcrumb
+              items={[
+                { label: 'Inicio', href: '/' },
+                { label: 'Categorías', href: '/categorias' },
+                { label: title },
+              ]}
+            />
           </div>
+          {favoriteButton}
         </div>
 
         <div className="flex items-center gap-3">
