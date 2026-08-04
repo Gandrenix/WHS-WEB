@@ -10,16 +10,24 @@ import { BedrockSection } from './components/BedrockSection';
 import { ResurfaceSection } from './components/ResurfaceSection';
 import type { Project } from '@/entities/project';
 import type { SpecimenCard } from '@/entities/specimen-card';
+import type { FooterSocialLink } from '@/entities/footer-social-link';
 
 interface HomeClientProps {
   recentProjects?: Project[];
   /** Fichas de STRATA I, editables desde /admin/dashboard/especimenes. */
   specimenCards: SpecimenCard[];
+  /** Enlaces de "ENCUÉNTRANOS" del footer, editables desde /admin/dashboard/footer. */
+  socialLinks: FooterSocialLink[];
   /** Botón de contacto ya resuelto por la página (composición vía app). */
   contactButton?: ReactNode;
 }
 
-export function HomeClient({ recentProjects: _recentProjects, specimenCards, contactButton }: HomeClientProps) {
+export function HomeClient({
+  recentProjects: _recentProjects,
+  specimenCards,
+  socialLinks,
+  contactButton,
+}: HomeClientProps) {
   return (
     <div className="relative pr-[50px] md:pr-[130px]">
       <DepthIndicator />
@@ -30,7 +38,7 @@ export function HomeClient({ recentProjects: _recentProjects, specimenCards, con
         <StrataTwoSection />
         <BedrockSection />
       </main>
-      <ResurfaceSection contactButton={contactButton} />
+      <ResurfaceSection contactButton={contactButton} socialLinks={socialLinks} />
     </div>
   );
 }

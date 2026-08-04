@@ -2,6 +2,7 @@ export { Button } from './ui/Button';
 export { Container } from './ui/Container';
 export { Section } from './ui/Section';
 export { DepthIndicator } from './ui/DepthIndicator';
+export { VisitorLocalTime } from './ui/VisitorLocalTime';
 export { DarkGradientBg } from './ui/DarkGradientBg';
 export { RollingCube404 } from './ui/RollingCube404';
 export { useMediaQuery } from './hooks/useMediaQuery';

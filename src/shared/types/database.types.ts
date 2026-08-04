@@ -339,6 +339,33 @@ export interface Database {
         };
         Relationships: [];
       };
+      footer_social_links: {
+        Row: {
+          id: string;
+          position: number;
+          label: string;
+          url: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          position?: number;
+          label: string;
+          url: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          position?: number;
+          label?: string;
+          url?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

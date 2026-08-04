@@ -4,15 +4,31 @@ import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import logoPlayingImg from '@/shared/assets/logo-playing.png';
+import { VisitorLocalTime } from '@/shared';
+import type { FooterSocialLink } from '@/entities/footer-social-link';
 
 export interface ResurfaceSectionProps {
   /** Botón "Hablemos de tu proyecto" ya resuelto por la página (composición vía
    * app, no import cruzado de features — mismo patrón que favoriteButton en
    * DocumentReaderContainer). Si no se pasa, cae al mailto: de siempre. */
   contactButton?: ReactNode;
+  /** Enlaces de "ENCUÉNTRANOS", editables desde /admin/dashboard/footer. */
+  socialLinks?: FooterSocialLink[];
 }
 
-export function ResurfaceSection({ contactButton }: ResurfaceSectionProps = {}) {
+const DEFAULT_SOCIAL_LINKS: Pick<FooterSocialLink, 'label' | 'url'>[] = [
+  { label: 'GitHub', url: 'https://github.com' },
+  { label: 'LinkedIn', url: 'https://linkedin.com' },
+  { label: 'YouTube', url: 'https://youtube.com' },
+  { label: 'SoundCloud', url: 'https://soundcloud.com' },
+  { label: 'Itch.io', url: 'https://itch.io' },
+];
+
+export function ResurfaceSection({ contactButton, socialLinks }: ResurfaceSectionProps = {}) {
+  // Si la tabla footer_social_links todavía no tiene filas (ej. no se corrió
+  // el SQL de semilla), cae a los mismos 5 enlaces que antes estaban
+  // hardcodeados, para que el footer nunca se vea vacío.
+  const linksToRender = socialLinks && socialLinks.length > 0 ? socialLinks : DEFAULT_SOCIAL_LINKS;
   return (
     <footer
       id="resurface"
@@ -43,7 +59,9 @@ export function ResurfaceSection({ contactButton }: ResurfaceSectionProps = {}) 
           <div className="md:col-span-4 space-y-3 font-mono text-sm">
             <h3 className="font-bold text-[#0D0A08] uppercase tracking-wider mb-2 text-base">CONTACTO</h3>
             <p className="text-[#0D0A08] font-bold">wienerhoundstudios@gmail.com</p>
-            <p className="text-[#2B1B14] font-medium">Bucaramanga, Colombia [ UTC-05:00 ]</p>
+            <p className="text-[#2B1B14] font-medium">
+              <VisitorLocalTime />
+            </p>
             {contactButton ?? (
               <a
                 href="mailto:wienerhoundstudios@gmail.com"
@@ -60,46 +78,17 @@ export function ResurfaceSection({ contactButton }: ResurfaceSectionProps = {}) 
               ENCUÉNTRANOS
             </h3>
             <div className="flex flex-wrap gap-4 font-mono text-xs md:text-sm font-bold text-[#0D0A08]">
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-[#8B2FE0] transition-colors underline underline-offset-4 decoration-[#8B2FE0]/40"
-              >
-                GitHub
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-[#8B2FE0] transition-colors underline underline-offset-4 decoration-[#8B2FE0]/40"
-              >
-                LinkedIn
-              </a>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-[#8B2FE0] transition-colors underline underline-offset-4 decoration-[#8B2FE0]/40"
-              >
-                YouTube
-              </a>
-              <a
-                href="https://soundcloud.com"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-[#8B2FE0] transition-colors underline underline-offset-4 decoration-[#8B2FE0]/40"
-              >
-                SoundCloud
-              </a>
-              <a
-                href="https://itch.io"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-[#8B2FE0] transition-colors underline underline-offset-4 decoration-[#8B2FE0]/40"
-              >
-                Itch.io
-              </a>
+              {linksToRender.map((link, index) => (
+                <a
+                  key={`${link.url}-${index}`}
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-[#8B2FE0] transition-colors underline underline-offset-4 decoration-[#8B2FE0]/40"
+                >
+                  {link.label}
+                </a>
+              ))}
             </div>
 
             {/* Signature */}
