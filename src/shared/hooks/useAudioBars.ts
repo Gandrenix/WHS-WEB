@@ -28,18 +28,27 @@ export function useAudioBars(barCount: number, barRefs: RefObject<Array<HTMLElem
 
   useEffect(() => {
     if (!isPlaying) return;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // A propósito NO se respeta prefers-reduced-motion acá: el ecualizador solo se mueve
+    // mientras el usuario tiene música sonando porque él mismo le dio play — no es
+    // decoración ambiental de fondo (esas sí lo respetan: nubes, paralaje, HUD). Suprimirlo
+    // solo hacía que el reproductor se viera roto para quien tiene esa preferencia activada.
     let raf = 0;
 
     const tick = () => {
       const bars = barRefs.current;
       const data = dataRef.current;
-      if (bars && !reduceMotion) {
+      if (bars) {
         for (let i = 0; i < barCount; i++) {
           const el = bars[i];
           if (!el) continue;
           const fallback = isFallbackRef.current || !data;
-          el.classList.toggle('eq-bar', fallback);
+          if (fallback !== el.classList.contains('eq-bar')) {
+            el.classList.toggle('eq-bar', fallback);
+            // Desfase por barra: sin esto las 18 pulsaban exactamente juntas (mismo
+            // keyframe, sin animation-delay), y en vez de un ecualizador se veía como una
+            // sola barra ancha respirando — desfasado, se lee como picos independientes.
+            el.style.animationDelay = fallback ? `${((i * 37) % barCount) * (0.9 / barCount)}s` : '';
+          }
           if (!fallback && data) {
             const [from, to] = bandFor(barCount, i);
             const a = Math.floor(from * data.length);

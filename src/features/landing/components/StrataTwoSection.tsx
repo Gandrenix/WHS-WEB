@@ -182,8 +182,11 @@ export function StrataTwoSection() {
                   </div>
                 )}
 
-                {/* Controls Bar */}
-                <div className="flex justify-between items-center pt-3 border-t border-white/10 text-xs">
+                {/* Controls Bar: envuelve en vez de superponerse — "REPRODUCIR" es mucho más
+                    ancho que "PAUSA" y en una tarjeta angosta de móvil empujaba el botón de
+                    SONIDO hasta encimarse con él (justify-between no evita que dos elementos
+                    choquen si juntos no caben en una sola fila). */}
+                <div className="flex flex-wrap justify-between items-center gap-x-3 gap-y-2 pt-3 border-t border-white/10 text-xs">
                   <button
                     onClick={toggle}
                     disabled={songs.length === 0}
