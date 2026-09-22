@@ -78,7 +78,7 @@ export function MrnaAsciiAnimation({
 }: MrnaAsciiAnimationProps = {}) {
   const [frames, setFrames] = useState<FrameData | null>(null);
   const [visible, setVisible] = useState(false);
-  const [scale, setScale] = useState(1);
+  const [renderFontSize, setRenderFontSize] = useState(fontSize);
   // Distingue "todavía no entra en pantalla" de "entró y sigue bajando el archivo" (~880 KB
   // comprimidos): sin esto, en una conexión lenta la tarjeta se veía en blanco un buen
   // rato y parecía rota en vez de estar cargando.
@@ -108,6 +108,8 @@ export function MrnaAsciiAnimation({
     loadFrames()
       .then((f) => {
         if (cancelled) return;
+        (window as unknown as { __setFramesCalled?: number }).__setFramesCalled =
+          ((window as unknown as { __setFramesCalled?: number }).__setFramesCalled ?? 0) + 1;
         setFrames(f);
         setStatus('idle');
       })
@@ -121,54 +123,80 @@ export function MrnaAsciiAnimation({
     };
   }, [visible, frames]);
 
-  // Reproducción: escribe el texto directamente, sin pasar por el estado de React.
+  // Escribe el primer fotograma, mide el tamaño y arranca la animación — las tres cosas en
+  // un solo efecto, en ese orden, para que "escribir" y "medir" nunca puedan desordenarse.
+  //
+  // La secuencia real arranca con ~18 fotogramas en negro (un fade-in intencional): medir
+  // CUALQUIERA de esos fotogramas da scrollWidth/Height = 0 (no hay nada dibujado todavía),
+  // y ESE fue el bug real detrás de "en el cel no se ve nada" — no era un problema de red ni
+  // de Android: el tamaño de fuente se quedaba pegado en su valor base (sin achicar) porque
+  // la única medición que se hacía caía siempre en un fotograma vacío, y el arte real
+  // terminaba más ancho que su caja, mostrando solo una esquina en vez del dibujo completo.
   useEffect(() => {
     const pre = preRef.current;
-    if (!frames || !pre) return;
+    const container = containerRef.current;
+    if (!frames || !pre || !container) return;
+
     if (!pre.textContent) pre.textContent = frameAt(frames, 0);
 
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (isPaused || !visible || reduceMotion) return;
-
-    const frameCount = frames.offsets.length;
-    let raf = 0;
-    let last = 0;
-    let index = 0;
-    const step = 1000 / FPS;
-    const tick = (time: number) => {
-      if (!last) last = time;
-      const delta = time - last;
-      if (delta >= step) {
-        index = (index + 1) % frameCount;
-        pre.textContent = frameAt(frames, index);
-        last = time - (delta % step);
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [frames, visible, isPaused]);
-
-  // Escala tipo "contain": el arte se ve completo y centrado en ambos ejes.
-  useEffect(() => {
-    if (!frames) return;
+    // Escala tipo "contain": el arte se ve completo y centrado en ambos ejes. Calcula un
+    // font-size final y lo aplica directo (nada de `transform: scale()`): escalar texto ya
+    // rasterizado por composición es el mismo truco que dejaba las barras del ecualizador
+    // sin animar en Android — en ciertos GPU/compositores móviles, un glifo diminuto
+    // reescalado por transform puede rasterizar a nada, aunque en escritorio se vea
+    // perfecto. Pedirle al motor de fuentes que dibuje directo al tamaño final (su propio
+    // hinting, no una textura reescalada) es más robusto en cualquier plataforma.
     const measure = () => {
-      const container = containerRef.current;
-      const content = preRef.current;
-      if (!container || !content) return;
-      const w = content.scrollWidth;
-      const h = content.scrollHeight;
-      if (w <= 0 || h <= 0) return setScale(scaleBoost);
+      // Busca el primer fotograma con contenido real para medir (saltando el fade-in en
+      // negro): mide contra ESE, sin tocar lo que el <pre> esté mostrando en este momento
+      // (solo lee scrollWidth/Height de un valor temporal y lo restaura de inmediato, todo
+      // síncrono — no hay parpadeo visible).
+      let i = 0;
+      while (i < frames.offsets.length - 1 && frameAt(frames, i).trim().length === 0) i++;
+      const shown = pre.textContent;
+      pre.textContent = frameAt(frames, i);
+      const currentPx = parseFloat(getComputedStyle(pre).fontSize) || fontSize;
+      const w = (pre.scrollWidth / currentPx) * fontSize;
+      const h = (pre.scrollHeight / currentPx) * fontSize;
+      pre.textContent = shown;
+      if (w <= 0 || h <= 0) return;
       const widthRatio = container.clientWidth / w;
       const heightRatio = container.clientHeight / h;
       const fit = heightRatio > 0 ? Math.min(widthRatio, heightRatio) : widthRatio;
-      setScale((fit > 0 ? fit : 1) * scaleBoost);
+      // Piso de 4px: mejor que el arte se recorte un poco (el contenedor tiene overflow
+      // hidden) a que el texto se achique hasta quedar invisible en pantallas angostas.
+      setRenderFontSize(Math.max(4, (fit > 0 ? fit : 1) * fontSize * scaleBoost));
     };
     measure();
-    const observer = new ResizeObserver(measure);
-    if (containerRef.current) observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, [frames, fontSize, scaleBoost]);
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(container);
+
+    // Reproducción: escribe el texto directamente, sin pasar por el estado de React.
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let raf = 0;
+    if (!isPaused && visible && !reduceMotion) {
+      const frameCount = frames.offsets.length;
+      let last = 0;
+      let index = 0;
+      const step = 1000 / FPS;
+      const tick = (time: number) => {
+        if (!last) last = time;
+        const delta = time - last;
+        if (delta >= step) {
+          index = (index + 1) % frameCount;
+          pre.textContent = frameAt(frames, index);
+          last = time - (delta % step);
+        }
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [frames, visible, isPaused, fontSize, scaleBoost]);
 
   return (
     <div
@@ -198,13 +226,20 @@ export function MrnaAsciiAnimation({
           </span>
         </div>
       )}
-      <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center', flex: 'none' }}>
-        <pre
-          ref={preRef}
-          aria-hidden="true"
-          style={{ fontFamily: 'inherit', fontSize: `${fontSize}px`, lineHeight: 0.78, margin: 0, whiteSpace: 'pre', color }}
-        />
-      </div>
+      <pre
+        ref={preRef}
+        aria-hidden="true"
+        style={{
+          fontFamily: 'inherit',
+          fontSize: `${renderFontSize}px`,
+          lineHeight: 0.78,
+          margin: 0,
+          whiteSpace: 'pre',
+          color,
+          flex: 'none',
+        }}
+      />
     </div>
   );
 }
+
