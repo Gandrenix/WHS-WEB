@@ -7,6 +7,7 @@ import { getUnreadNotificationsCount } from '@/entities/notification/server';
 import { getSongs } from '@/entities/song/server';
 import { NotificationBell } from '@/features/notifications';
 import { siteConfig } from '@/shared/config/site';
+import { AudioPlayerProvider } from '@/shared/ui/AudioPlayerProvider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const ibmPlexMono = IBM_Plex_Mono({
@@ -68,8 +69,12 @@ export default async function RootLayout({
       className={`${inter.variable} ${ibmPlexMono.variable} ${fraunces.variable} ${bricolage.variable} scroll-smooth`}
     >
       <body className="bg-[#F2EDE4] text-[#3A3532] font-sans overflow-x-hidden antialiased">
-        <Navbar profile={profile} notificationBell={notificationBell} songs={songs} />
-        {children}
+        {/* Un solo reproductor para todo el sitio: el botón del header y la tarjeta
+            "Diseño Sonoro" de STRATA II leen y controlan el mismo, vía useAudioPlayer(). */}
+        <AudioPlayerProvider songs={songs}>
+          <Navbar profile={profile} notificationBell={notificationBell} />
+          {children}
+        </AudioPlayerProvider>
       </body>
     </html>
   );

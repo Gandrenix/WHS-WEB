@@ -1,24 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef } from 'react';
 import Image from 'next/image';
 import { Palette, Gamepad2, Volume2, VolumeX, Play, Pause } from 'lucide-react';
 import { SectionStrataBackdrop } from '@/shared/ui/SectionStrataBackdrop';
+import { useAudioPlayer } from '@/shared/ui/AudioPlayerProvider';
+import { useAudioBars } from '@/shared/hooks/useAudioBars';
 
-const AUDIO_TRACKS = [
-  { id: 1, title: '01. Abyssal Current', duration: '03:24' },
-  { id: 2, title: '02. Subterranean Drift', duration: '04:11' },
-  { id: 3, title: '03. Pale Veil Suite', duration: '06:47' },
-  { id: 4, title: '04. Echoes Below', duration: '05:02' },
-];
+/** Cuántas barras dibuja el visualizador de esta tarjeta (el header usa solo 3, acá hay más espacio). */
+const BAR_COUNT = 18;
+
+function formatDuration(seconds: number | null): string {
+  if (seconds === null || !Number.isFinite(seconds)) return '--:--';
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 export function StrataTwoSection() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-
-  const togglePlay = () => setIsPlaying(!isPlaying);
-  const toggleMute = () => setIsMuted(!isMuted);
+  const barRefs = useRef<Array<HTMLElement | null>>([]);
+  // Mismo reproductor que el botón del header (ver AudioPlayerProvider en app/layout.tsx):
+  // tocar play acá también lo refleja allá, y viceversa — nunca hay dos canciones sonando
+  // a la vez por accidente.
+  const { songs, currentIndex, isPlaying, isMuted, duration, toggle, toggleMute, selectTrack } = useAudioPlayer();
+  useAudioBars(BAR_COUNT, barRefs);
 
   return (
     <section
@@ -127,54 +132,70 @@ export function StrataTwoSection() {
                 Diseño de sonido ambiental con reverberación espacial y paisajes sonoros inmersivos.
               </p>
 
-              {/* Audio Player Box */}
+              {/* Audio Player Box — mismo reproductor que el botón del header, ver arriba */}
               <div className="relative bg-[#0D0A08] p-5 border border-[#8B2FE0]/40 font-mono">
-                {/* Waveform Visualizer simulation */}
+                {/* Barras reactivas al espectro real de lo que suena (useAudioBars); si no
+                    hay nada sonando o el navegador no pudo leer el audio, caen a un pulso
+                    CSS aproximado en vez de quedarse planas. */}
                 <div className="flex items-center gap-1 h-12 mb-4 px-2 bg-black/40">
-                  {[40, 70, 30, 90, 60, 100, 45, 80, 65, 30, 85, 50, 95, 40, 70, 35, 90, 60].map((h, i) => (
+                  {Array.from({ length: BAR_COUNT }).map((_, i) => (
                     <div
                       key={i}
-                      className={`flex-1 transition-all duration-300 ${
-                        isPlaying ? 'bg-[#8B2FE0] animate-pulse' : 'bg-white/30'
-                      }`}
-                      style={{ height: isPlaying ? `${h}%` : '25%' }}
+                      ref={(el) => {
+                        barRefs.current[i] = el;
+                      }}
+                      className="flex-1 origin-bottom transition-[height] duration-75 bg-white/30"
+                      style={{ height: isPlaying ? '20%' : '25%' }}
                     />
                   ))}
                 </div>
 
-                {/* Playlist */}
-                <div className="space-y-1.5 mb-4 text-xs">
-                  {AUDIO_TRACKS.map((track, idx) => (
-                    <button
-                      key={track.id}
-                      onClick={() => {
-                        setCurrentTrack(idx);
-                        setIsPlaying(true);
-                      }}
-                      className={`w-full flex justify-between p-2 transition-colors text-left cursor-pointer ${
-                        currentTrack === idx
-                          ? 'bg-[#8B2FE0]/30 text-[#C084FC] font-bold border border-[#8B2FE0]/50'
-                          : 'text-white/70 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      <span>{track.title}</span>
-                      <span className="text-[11px] opacity-70">{track.duration}</span>
-                    </button>
-                  ))}
-                </div>
+                {/* Playlist: viene de Supabase (/admin/dashboard/música), no hardcodeada.
+                    Alto fijo con scroll propio — más canciones no estiran la tarjeta. */}
+                {songs.length === 0 ? (
+                  <p className="text-white/50 text-xs italic mb-4 px-2">
+                    Sin canciones publicadas todavía.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5 mb-4 text-xs max-h-40 overflow-y-auto pr-1">
+                    {songs.map((song, idx) => {
+                      const isCurrent = idx === currentIndex;
+                      return (
+                        <button
+                          key={song.id}
+                          onClick={() => selectTrack(idx)}
+                          className={`w-full flex justify-between items-center gap-2 p-2 transition-colors text-left cursor-pointer ${
+                            isCurrent
+                              ? 'bg-[#8B2FE0]/30 text-[#C084FC] font-bold border border-[#8B2FE0]/50'
+                              : 'text-white/70 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          <span className="truncate">
+                            {String(idx + 1).padStart(2, '0')}. {song.title}
+                          </span>
+                          <span className="text-[11px] opacity-70 shrink-0">
+                            {isCurrent ? formatDuration(duration) : ''}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Controls Bar */}
                 <div className="flex justify-between items-center pt-3 border-t border-white/10 text-xs">
                   <button
-                    onClick={togglePlay}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#8B2FE0] hover:bg-[#C084FC] text-white font-bold transition-all cursor-pointer"
+                    onClick={toggle}
+                    disabled={songs.length === 0}
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#8B2FE0] hover:bg-[#C084FC] text-white font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {isPlaying ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />}
                     {isPlaying ? 'PAUSA' : 'REPRODUCIR'}
                   </button>
                   <button
                     onClick={toggleMute}
-                    className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-bold cursor-pointer"
+                    disabled={songs.length === 0}
+                    className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                     {isMuted ? 'SILENCIADO' : 'SONIDO'}

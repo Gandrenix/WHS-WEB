@@ -1,8 +1,8 @@
 'use client';
 // Client: isla pequeña para el logo interactivo con reproductor de música de ambiente.
-// La playlist (`songs`) llega ya resuelta desde app/layout.tsx (patrón
-// favoriteButton/contactButton: se lee de Supabase en el Server Component, acá solo se
-// consume) — así ni el número de canciones ni sus URLs viven hardcodeados en el bundle.
+// El reproductor en sí (playlist, audio real, analizador) vive en AudioPlayerProvider
+// (raíz del sitio, ver app/layout.tsx) — este componente solo es una de sus vistas, la
+// misma que controla la tarjeta "Diseño Sonoro" de STRATA II (ver StrataTwoSection).
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -10,26 +10,20 @@ import Image from 'next/image';
 import { ChevronDown, Music, Pause, Play, SkipBack, SkipForward } from 'lucide-react';
 import logoImg from '@/shared/assets/logo.png';
 import logoPlayingImg from '@/shared/assets/logo-playing.png';
-import type { Song } from '@/entities/song';
-import { usePlaylistPlayer } from '../hooks/usePlaylistPlayer';
-import { useAudioVisualizer } from '../hooks/useAudioVisualizer';
+import { useAudioPlayer } from '@/shared/ui/AudioPlayerProvider';
+import { useAudioBars } from '@/shared/hooks/useAudioBars';
 
 export interface LogoAudioPlayerProps {
   isDark?: boolean;
-  songs: Song[];
 }
 
-export function LogoAudioPlayer({ isDark = false, songs }: LogoAudioPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+export function LogoAudioPlayer({ isDark = false }: LogoAudioPlayerProps) {
   const barRefs = useRef<Array<HTMLElement | null>>([]);
   const rootRef = useRef<HTMLDivElement>(null);
   const [listOpen, setListOpen] = useState(false);
 
-  const { currentSong, currentIndex, isPlaying, toggle, selectTrack, next, prev } = usePlaylistPlayer(
-    songs,
-    audioRef
-  );
-  useAudioVisualizer(audioRef, barRefs, isPlaying);
+  const { songs, currentSong, currentIndex, isPlaying, toggle, selectTrack, next, prev } = useAudioPlayer();
+  useAudioBars(3, barRefs);
 
   // Cierra la lista al hacer clic fuera (no es un <details>/popover nativo porque
   // seleccionar una pista debe disparar play(), no solo abrir/cerrar).
@@ -46,8 +40,6 @@ export function LogoAudioPlayer({ isDark = false, songs }: LogoAudioPlayerProps)
 
   return (
     <div ref={rootRef} className="relative flex items-center gap-3">
-      <audio ref={audioRef} preload="none" crossOrigin="anonymous" className="hidden" />
-
       <Link href="/" className="logo flex items-center group relative">
         {/* El contenedor mide siempre lo mismo (no afecta la altura del header).
             logo-playing.png se escala visualmente por encima de ese tamaño con
@@ -92,8 +84,8 @@ export function LogoAudioPlayer({ isDark = false, songs }: LogoAudioPlayerProps)
             }`}
           >
             {/* Ecualizador reactivo: cada barra sigue una banda del espectro real de la
-                canción (ver useAudioVisualizer). Si el navegador no puede leer el audio
-                (CORS), cae sola al pulso .eq-bar por CSS. */}
+                canción (ver useAudioBars). Si el navegador no puede leer el audio (CORS),
+                cae sola al pulso .eq-bar por CSS. */}
             <span className="flex items-end gap-[2px] h-3 w-3.5">
               {[0, 1, 2].map((i) => (
                 <span
@@ -208,3 +200,4 @@ export function LogoAudioPlayer({ isDark = false, songs }: LogoAudioPlayerProps)
     </div>
   );
 }
+

@@ -10,7 +10,6 @@ import { AccountButton } from './AccountButton';
 import { useScrollProgress } from '../hooks/useScrollProgress';
 import { useActiveSection } from '../hooks/useActiveSection';
 import type { Profile } from '@/entities/profile';
-import type { Song } from '@/entities/song';
 
 const HOME_SECTIONS = ['strata-1', 'strata-2', 'bedrock', 'resurface'] as const;
 
@@ -62,11 +61,9 @@ export interface NavbarProps {
   profile: Profile | null;
   /** Campana de notificaciones ya resuelta por app/layout.tsx (patrón favoriteButton/contactButton). */
   notificationBell?: ReactNode;
-  /** Playlist del reproductor del header, leída de Supabase en app/layout.tsx. */
-  songs: Song[];
 }
 
-export function Navbar({ profile, notificationBell, songs }: NavbarProps) {
+export function Navbar({ profile, notificationBell }: NavbarProps) {
   const pathname = usePathname();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isHome = pathname === '/';
@@ -139,7 +136,7 @@ export function Navbar({ profile, notificationBell, songs }: NavbarProps) {
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <LogoAudioPlayer isDark={isCategoriesRoute} songs={songs} />
+          <LogoAudioPlayer isDark={isCategoriesRoute} />
 
           {/* Lectura de profundidad en vivo: eco del DepthIndicator lateral, solo en Home.
               El texto cambia de longitud según la sección ("SUPERFICIE" vs "BEDROCK" vs
