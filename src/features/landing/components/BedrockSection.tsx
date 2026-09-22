@@ -67,7 +67,7 @@ export function BedrockSection() {
     <section
       id="bedrock"
       ref={containerRef}
-      className="min-h-[80vh] bg-[#0D0A08] text-[#F2EDE4] py-24 relative overflow-hidden flex flex-col justify-center border-b border-white/10 select-none"
+      className="min-h-[80vh] bg-[#0D0A08] text-[#F2EDE4] py-24 relative overflow-hidden flex flex-col justify-center select-none"
       style={
         {
           '--mouse-x': `${mousePos.x}%`,
@@ -102,6 +102,10 @@ export function BedrockSection() {
       {/* Linterna que sigue al mouse, ya definida en globals.css (.bedrock-flashlight) */}
       <div className="absolute inset-0 bedrock-flashlight bg-white/[0.04] pointer-events-none" />
 
+      {/* Fundido superior al color exacto con que termina Strata II (#0D0A08): la foto y la
+          niebla púrpura de arriba empezaban en seco y dibujaban un borde entre secciones. */}
+      <div className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-[#0D0A08] to-transparent pointer-events-none" />
+
       {/* Content Area */}
       <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -128,7 +132,7 @@ export function BedrockSection() {
           </div>
 
           {/* High Contrast & Clear Poetry Content */}
-          <div className="lg:col-span-8 space-y-8 font-fraunces text-center lg:text-left bg-white/5 p-8 md:p-12 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-sm">
+          <div className="fade-up lg:col-span-8 space-y-8 font-fraunces text-center lg:text-left bg-white/5 p-8 md:p-12 rounded-2xl border border-white/10 shadow-2xl">
             <h3 className="text-3xl md:text-5xl italic font-normal text-white leading-tight">
               ¿Qué queda cuando <br />
               <span className="text-[#C084FC] font-semibold not-italic">la memoria</span> se pudre?

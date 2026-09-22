@@ -10,6 +10,7 @@ import { AccountButton } from './AccountButton';
 import { useScrollProgress } from '../hooks/useScrollProgress';
 import { useActiveSection } from '../hooks/useActiveSection';
 import type { Profile } from '@/entities/profile';
+import type { Song } from '@/entities/song';
 
 const HOME_SECTIONS = ['strata-1', 'strata-2', 'bedrock', 'resurface'] as const;
 
@@ -61,13 +62,16 @@ export interface NavbarProps {
   profile: Profile | null;
   /** Campana de notificaciones ya resuelta por app/layout.tsx (patrón favoriteButton/contactButton). */
   notificationBell?: ReactNode;
+  /** Playlist del reproductor del header, leída de Supabase en app/layout.tsx. */
+  songs: Song[];
 }
 
-export function Navbar({ profile, notificationBell }: NavbarProps) {
+export function Navbar({ profile, notificationBell, songs }: NavbarProps) {
   const pathname = usePathname();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isHome = pathname === '/';
-  const scrollProgress = useScrollProgress();
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  useScrollProgress(progressBarRef);
   const activeSection = useActiveSection(HOME_SECTIONS, isHome);
   const headerRef = useRef<HTMLElement>(null);
 
@@ -119,8 +123,8 @@ export function Navbar({ profile, notificationBell }: NavbarProps) {
 
   // Styling based on route: Dark theme for /categorias, light theme for Home / default
   const headerStyles = isCategoriesRoute
-    ? 'bg-[#0D0A08]/95 border-white/15 text-[#F2EDE4] shadow-2xl'
-    : 'bg-[#F2EDE4]/95 border-[#3A3532]/15 text-[#0D0A08] shadow-sm';
+    ? 'bg-[#0D0A08] border-white/15 text-[#F2EDE4] shadow-2xl'
+    : 'bg-[#F2EDE4] border-[#3A3532]/15 text-[#0D0A08] shadow-sm';
 
   const textStyles = isCategoriesRoute
     ? 'text-[#F2EDE4] hover:text-[#C084FC]'
@@ -131,11 +135,11 @@ export function Navbar({ profile, notificationBell }: NavbarProps) {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-[80] backdrop-blur-md py-2 border-b transition-all duration-300 relative ${headerStyles}`}
+      className={`sticky top-0 z-[80] py-2 border-b transition-all duration-300 relative ${headerStyles}`}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <LogoAudioPlayer isDark={isCategoriesRoute} />
+          <LogoAudioPlayer isDark={isCategoriesRoute} songs={songs} />
 
           {/* Lectura de profundidad en vivo: eco del DepthIndicator lateral, solo en Home.
               El texto cambia de longitud según la sección ("SUPERFICIE" vs "BEDROCK" vs
@@ -165,7 +169,7 @@ export function Navbar({ profile, notificationBell }: NavbarProps) {
         </div>
 
         <div className="nav-wrapper flex items-center">
-          <nav className="main-nav hidden md:block font-mono text-xs uppercase tracking-wider">
+          <nav className="main-nav hidden xl:block font-mono text-xs uppercase tracking-wider">
             <ul className="flex gap-8 items-center font-bold">
               <li>
                 <NavItem
@@ -229,8 +233,9 @@ export function Navbar({ profile, notificationBell }: NavbarProps) {
         }`}
       >
         <div
-          className="h-full bg-gradient-to-r from-[#8B2FE0] to-[#7ED957] transition-[width] duration-150 ease-out"
-          style={{ width: `${scrollProgress * 100}%` }}
+          ref={progressBarRef}
+          className="h-full w-full origin-left bg-gradient-to-r from-[#8B2FE0] to-[#7ED957] will-change-transform"
+          style={{ transform: 'scaleX(0)' }}
         />
       </div>
     </header>

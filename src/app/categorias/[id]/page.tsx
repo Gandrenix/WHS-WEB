@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getProjectById } from '@/entities/project/server';
 import { DocumentReaderContainer, type ProgressUpdater } from '@/features/document-reader';
 import {
@@ -14,6 +15,36 @@ export interface CategoryDetailPageProps {
   params: Promise<{
     id: string;
   }>;
+}
+
+// Cada obra es una página pública compartible (link directo desde el catálogo o redes);
+// sin esto, compartir un proyecto mostraba el título/imagen genéricos del sitio entero
+// en vez de los de la obra.
+export async function generateMetadata({ params }: CategoryDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const project = await getProjectById(id);
+  if (!project) return {};
+
+  const title = project.title;
+  const description = project.description || `${project.title} — Wiener Hound Studios`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `/categorias/${id}`,
+      type: 'article',
+      images: project.image_url ? [{ url: project.image_url }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: project.image_url ? [project.image_url] : undefined,
+    },
+  };
 }
 
 export default async function CategoryDetailPage({ params }: CategoryDetailPageProps) {

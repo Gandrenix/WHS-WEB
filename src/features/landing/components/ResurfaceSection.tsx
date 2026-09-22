@@ -6,6 +6,7 @@ import Link from 'next/link';
 import logoPlayingImg from '@/shared/assets/logo-playing.png';
 import { VisitorLocalTime } from '@/shared';
 import type { FooterSocialLink } from '@/entities/footer-social-link';
+import { ResurfaceSky } from './ResurfaceSky';
 
 export interface ResurfaceSectionProps {
   /** Botón "Hablemos de tu proyecto" ya resuelto por la página (composición vía
@@ -32,9 +33,16 @@ export function ResurfaceSection({ contactButton, socialLinks }: ResurfaceSectio
   return (
     <footer
       id="resurface"
-      className="py-20 bg-[#F2EDE4] text-[#0D0A08] border-t border-[#3A3532]/20 font-sans relative"
+      className="bg-[#0D0A08] text-[#0D0A08] font-sans relative"
     >
-      <div className="max-w-6xl mx-auto px-6 md:px-12">
+      {/* Emerger del negro de Bedrock al crema del footer, con nubes; el contenido
+          empieza donde el fondo ya es claro, así el texto oscuro siempre se lee.
+          El footer en sí tiene el fondo OSCURO de Bedrock y el crema vive solo en el
+          bloque de contenido: con el footer en crema, el suavizado del borde superior
+          del cielo dejaba asomar un hilo claro justo en la unión con Bedrock. */}
+      <ResurfaceSky />
+      <div className="bg-[#F2EDE4] pb-20">
+      <div className="relative max-w-6xl mx-auto px-6 md:px-12 pt-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center pb-12 border-b border-[#3A3532]/20">
           {/* Column 1: Lab Coat Mascot & Tagline */}
           <div className="md:col-span-4 flex flex-col items-start gap-4">
@@ -124,6 +132,7 @@ export function ResurfaceSection({ contactButton, socialLinks }: ResurfaceSectio
 
           <div className="text-[#8B2FE0]">EXCAVAMOS EN TODOS LOS ESTRATOS 🐾</div>
         </div>
+      </div>
       </div>
     </footer>
   );

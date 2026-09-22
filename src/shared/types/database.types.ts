@@ -366,6 +366,39 @@ export interface Database {
         };
         Relationships: [];
       };
+      songs: {
+        Row: {
+          id: string;
+          title: string;
+          artist: string | null;
+          audio_url: string;
+          position: number;
+          is_default: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          artist?: string | null;
+          audio_url: string;
+          position?: number;
+          is_default?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          artist?: string | null;
+          audio_url?: string;
+          position?: number;
+          is_default?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

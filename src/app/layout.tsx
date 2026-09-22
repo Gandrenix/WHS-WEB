@@ -4,7 +4,9 @@ import './globals.css';
 import { Navbar } from '@/features/navbar';
 import { getCurrentProfile } from '@/entities/profile/server';
 import { getUnreadNotificationsCount } from '@/entities/notification/server';
+import { getSongs } from '@/entities/song/server';
 import { NotificationBell } from '@/features/notifications';
+import { siteConfig } from '@/shared/config/site';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const ibmPlexMono = IBM_Plex_Mono({
@@ -22,9 +24,32 @@ const bricolage = Bricolage_Grotesque({
   variable: '--font-bricolage',
 });
 
+const TITLE = 'Wiener Hound Studios — Sistema ESTRATO';
+const DESCRIPTION =
+  'Todo lo que hacemos empieza excavando. Atelier de excavación obsesiva: Bioinformática, Ingeniería Creativa y Pale Veil.';
+
 export const metadata: Metadata = {
-  title: 'Wiener Hound Studios — Sistema ESTRATO',
-  description: 'Todo lo que hacemos empieza excavando. Atelier de excavación obsesiva: Bioinformática, Ingeniería Creativa y Pale Veil.',
+  // Sin metadataBase, las URLs relativas de abajo (openGraph.images, etc.) no se pueden
+  // resolver a absolutas y Next avisa en cada build. Cada página hija (login, un proyecto)
+  // hereda esto y solo necesita sobreescribir title/description/openGraph.
+  metadataBase: new URL(siteConfig.url),
+  title: { default: TITLE, template: `%s — ${siteConfig.name}` },
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: '/',
+    siteName: siteConfig.name,
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630 }],
+    locale: 'es_CO',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ['/og-image.jpg'],
+  },
 };
 
 export default async function RootLayout({
@@ -32,7 +57,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const profile = await getCurrentProfile();
+  const [profile, songs] = await Promise.all([getCurrentProfile(), getSongs()]);
   const notificationBell = profile ? (
     <NotificationBell initialUnreadCount={await getUnreadNotificationsCount(profile.id)} />
   ) : null;
@@ -43,7 +68,7 @@ export default async function RootLayout({
       className={`${inter.variable} ${ibmPlexMono.variable} ${fraunces.variable} ${bricolage.variable} scroll-smooth`}
     >
       <body className="bg-[#F2EDE4] text-[#3A3532] font-sans overflow-x-hidden antialiased">
-        <Navbar profile={profile} notificationBell={notificationBell} />
+        <Navbar profile={profile} notificationBell={notificationBell} songs={songs} />
         {children}
       </body>
     </html>

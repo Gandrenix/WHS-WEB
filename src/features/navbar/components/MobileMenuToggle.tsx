@@ -32,7 +32,7 @@ export function MobileMenuToggle({
     useMobileMenu();
 
   return (
-    <div className="md:hidden">
+    <div className="xl:hidden">
       {/* Botón hamburguesa animado: dos líneas que giran en X */}
       <button
         type="button"

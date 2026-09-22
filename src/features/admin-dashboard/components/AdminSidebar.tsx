@@ -9,7 +9,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import logoPlayingImg from '@/shared/assets/logo-playing.png';
 
-export type AdminSection = 'publicaciones' | 'nueva-obra' | 'comunidad' | 'especimenes' | 'footer';
+export type AdminSection = 'publicaciones' | 'nueva-obra' | 'comunidad' | 'especimenes' | 'footer' | 'musica';
 
 export interface AdminSidebarProps {
   activeSection: AdminSection;
@@ -80,6 +80,10 @@ export function AdminSidebar({ activeSection, userEmail, signOutButton, projectC
 
         <Link href="/admin/dashboard/footer" className={linkClass(activeSection === 'footer')}>
           <span>🔗 FOOTER</span>
+        </Link>
+
+        <Link href="/admin/dashboard/musica" className={linkClass(activeSection === 'musica')}>
+          <span>🎵 MÚSICA</span>
         </Link>
 
         <Link

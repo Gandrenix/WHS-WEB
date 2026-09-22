@@ -169,7 +169,89 @@ body {
   animation: caret-blink 1.1s step-end infinite;
 }
 
+/* ESTRATO · flujo de luz sobre las isolíneas, motas y nubes.
+   Todo lo animado va dentro de no-preference: con "reducir movimiento" los pulsos se
+   ocultan (opacity 0) en vez de quedar como una línea sólida brillante, las motas se
+   quedan como puntos tenues y las nubes quietas en su posición inicial. */
+@keyframes strata-drift {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 0.85; }
+  100% { transform: translateY(-260px); opacity: 0; }
+}
+@keyframes strata-flow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -1900; }
+}
+@keyframes strata-cloud-drift {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100vw); }
+}
+
+/* El brillo de cada pulso es un segundo trazo ancho y tenue (ver FlowPulse), no un
+   filter: drop-shadow sobre SVG animado se recalcula entero en cada fotograma. */
+.strata-pulse { opacity: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .strata-mote { animation: strata-drift var(--dur, 18s) linear var(--delay, 0s) infinite; }
+  .strata-pulse {
+    opacity: 1;
+    stroke-dasharray: 110 1790;
+    animation: strata-flow var(--dur, 16s) linear var(--delay, 0s) infinite;
+  }
+  .strata-cloud { animation: strata-cloud-drift var(--dur, 140s) linear var(--delay, 0s) infinite; }
+}
+
+/* usePauseWhenOffscreen marca data-inview="false" cuando el bloque sale de pantalla */
+[data-inview='false'] * { animation-play-state: paused !important; }
+
+/* En móvil basta con el trazo nítido: el halo duplica el trabajo de pintado de cada pulso */
+@media (max-width: 640px) {
+  .strata-pulse-halo { display: none; }
+}
+
+/* Lenis (scroll suave): reglas mínimas que necesita para no pelearse con el scroll nativo */
+html.lenis, html.lenis body { height: auto; }
+html.lenis, html.lenis body { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: clip; }
+
+/* Cursor de terminal parpadeante (lecturas en vivo del HUD y del indicador de profundidad) */
+@media (prefers-reduced-motion: no-preference) {
+  .depth-caret, .hud-caret { animation: caret-blink 1s steps(1) infinite; }
+}
 
 
+/* HUD del Hero: radar de la rosa de los vientos, aguja y ping de los marcadores.
+   Todo es transform/opacity (compositor) y solo corre si se acepta movimiento. */
+.hud-sweep {
+  background: conic-gradient(from 0deg, transparent 0deg, transparent 290deg, rgba(139, 47, 224, 0.28) 360deg);
+  display: none;
+}
+.hud-ping { display: none; }
+@keyframes hud-sweep { to { transform: rotate(360deg); } }
+@keyframes hud-needle {
+  0%, 100% { transform: rotate(-9deg); }
+  28% { transform: rotate(13deg); }
+  52% { transform: rotate(-5deg); }
+  78% { transform: rotate(8deg); }
+}
+@keyframes hud-ping {
+  0% { transform: scale(1); opacity: 0.75; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hud-sweep { display: block; animation: hud-sweep 5s linear infinite; }
+  .hud-needle { transform-box: view-box; transform-origin: 44px 44px; animation: hud-needle 7s ease-in-out infinite; }
+  .hud-ping { display: block; animation: hud-ping 2.6s ease-out infinite; }
+}
 
-
+/* Patita del indicador de profundidad: antes era un tween de GSAP en bucle infinito, que
+   mantenía un ticker de main thread (y un recálculo de estilo por fotograma) activo SIEMPRE,
+   incluso con la página quieta. Como animación CSS de transform va por el compositor. */
+@keyframes paw-wiggle {
+  from { transform: translateX(0) rotate(0deg); }
+  to { transform: translateX(4px) rotate(10deg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .paw-wiggle { animation: paw-wiggle 0.45s ease-in-out infinite alternate; }
+}

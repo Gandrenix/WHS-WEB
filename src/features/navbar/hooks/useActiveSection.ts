@@ -13,7 +13,9 @@ export function useActiveSection(sectionIds: readonly string[], enabled: boolean
       return;
     }
 
-    const handleScroll = () => {
+    let raf = 0;
+    const compute = () => {
+      raf = 0;
       let current: string | null = null;
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -30,10 +32,18 @@ export function useActiveSection(sectionIds: readonly string[], enabled: boolean
       setActiveId(current);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
+    // una lectura por fotograma como máximo (antes: una por cada evento de scroll)
+    const handleScroll = () => {
+      if (!raf) raf = requestAnimationFrame(compute);
+    };
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    compute();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [sectionIds, enabled]);
 
   return activeId;

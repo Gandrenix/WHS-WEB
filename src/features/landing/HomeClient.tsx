@@ -1,13 +1,18 @@
 'use client';
+// Client: orquesta el scroll suave (Lenis) y las animaciones GSAP de scroll
+// (useLandingAnimations) sobre las secciones de la landing, por eso todo el árbol
+// vive en un boundary cliente.
 
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { DepthIndicator } from '@/shared/ui/DepthIndicator';
+import { useSmoothScroll } from '@/shared/hooks/useSmoothScroll';
 import { HeroEstrato } from './components/HeroEstrato';
 import { InstinctSection } from './components/InstinctSection';
 import { StrataOneSection } from './components/StrataOneSection';
 import { StrataTwoSection } from './components/StrataTwoSection';
 import { BedrockSection } from './components/BedrockSection';
 import { ResurfaceSection } from './components/ResurfaceSection';
+import { useLandingAnimations } from './hooks/useLandingAnimations';
 import type { Project } from '@/entities/project';
 import type { SpecimenCard } from '@/entities/specimen-card';
 import type { FooterSocialLink } from '@/entities/footer-social-link';
@@ -28,8 +33,12 @@ export function HomeClient({
   socialLinks,
   contactButton,
 }: HomeClientProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll();
+  useLandingAnimations(containerRef);
+
   return (
-    <div className="relative pr-[50px] md:pr-[130px]">
+    <div ref={containerRef} className="relative pr-[50px] md:pr-[130px] bg-[#0D0A08]">
       <DepthIndicator />
       <main>
         <HeroEstrato />

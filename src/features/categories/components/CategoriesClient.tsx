@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ProjectCard, type Project } from '@/entities/project';
-import { StarsBackground } from '@/shared/ui/StarsBackground';
+import { DeepStrataBackground } from '@/shared/ui/DeepStrataBackground';
 
 export interface CategoriesClientProps {
   initialProjects: Project[];
@@ -42,12 +42,12 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
   const gamesProjects = getProjectsByCategory('games');
 
   return (
-    <StarsBackground opacity={0.75} count={180} fontSize={14} speed={0.6} color="#FFFFFF" accentColor="#E0AAFF" density={0.6} className="min-h-screen bg-[#0D0A08] text-[#F2EDE4] font-sans">
+    <DeepStrataBackground className="min-h-screen bg-[#0A0810] text-[#F2EDE4] font-sans">
       {/* Hero Header */}
       <section className="py-24 bg-transparent border-b border-white/10 text-center relative z-10">
         <div className="max-w-5xl mx-auto px-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8B2FE0]/30 text-[#C084FC] font-mono text-xs font-bold uppercase tracking-widest mb-6 border border-[#8B2FE0]/50 shadow-lg">
-            ✨ CATÁLOGO &bull; S I S T E M A &nbsp; E S T R A T O
+            CATÁLOGO &bull; S I S T E M A &nbsp; E S T R A T O
           </div>
 
           <h1 className="font-mono text-4xl sm:text-6xl font-black uppercase text-white mb-4 tracking-tight drop-shadow-md">
@@ -232,6 +232,6 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
           </div>
         </section>
       )}
-    </StarsBackground>
+    </DeepStrataBackground>
   );
 }
