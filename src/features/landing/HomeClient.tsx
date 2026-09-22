@@ -1,11 +1,17 @@
 'use client';
-// Client: orquesta el scroll suave (Lenis) y las animaciones GSAP de scroll
-// (useLandingAnimations) sobre las secciones de la landing, por eso todo el árbol
-// vive en un boundary cliente.
+// Client: orquesta las animaciones GSAP de scroll (useLandingAnimations) sobre las
+// secciones de la landing, por eso todo el árbol vive en un boundary cliente.
+//
+// El scroll suave (Lenis) se probó y se quitó: agrega un desfase entre el input real
+// (rueda/trackpad) y lo que se mueve en pantalla — a quien usa scroll nativo a diario
+// le lee como "pegado/lento" en vez de "suave", que es justo lo que reportaron. El scroll
+// nativo ya corre a ~59fps de por sí (medido), así que Lenis no compraba nada a cambio.
+// Para reactivarlo: descomentar el import y `useSmoothScroll()` de abajo — sigue
+// implementado en shared/hooks/useSmoothScroll.ts, solo dejó de llamarse acá.
+// import { useSmoothScroll } from '@/shared/hooks/useSmoothScroll';
 
 import { useRef, type ReactNode } from 'react';
 import { DepthIndicator } from '@/shared/ui/DepthIndicator';
-import { useSmoothScroll } from '@/shared/hooks/useSmoothScroll';
 import { HeroEstrato } from './components/HeroEstrato';
 import { InstinctSection } from './components/InstinctSection';
 import { StrataOneSection } from './components/StrataOneSection';
@@ -34,7 +40,6 @@ export function HomeClient({
   contactButton,
 }: HomeClientProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  useSmoothScroll();
   useLandingAnimations(containerRef);
 
   return (
@@ -51,3 +56,4 @@ export function HomeClient({
     </div>
   );
 }
+

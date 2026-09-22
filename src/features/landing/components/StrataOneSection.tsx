@@ -142,8 +142,12 @@ export function StrataOneSection({ specimenCards }: StrataOneSectionProps) {
                   >
                     <Icon size={16} className="mb-2" strokeWidth={2.25} />
                     <div className="text-xs opacity-70 font-bold mb-1">NODO {item.step}</div>
-                    <div className="text-xs font-extrabold leading-snug mb-1">{item.title}</div>
-                    <div className="text-[10px] opacity-60">{item.desc}</div>
+                    {/* break-words: "Características" (15 letras) es más ancha que la
+                        columna en móvil (grid-cols-2) y sin esto se salía de la tarjeta
+                        en vez de partirse — las demás palabras del set son más cortas y
+                        nunca lo necesitaron, por eso no se notó antes. */}
+                    <div className="text-xs font-extrabold leading-snug mb-1 break-words">{item.title}</div>
+                    <div className="text-[10px] opacity-60 break-words">{item.desc}</div>
                   </button>
                   {idx < workflowSteps.length - 1 && (
                     <ChevronRight

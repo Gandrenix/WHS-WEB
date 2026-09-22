@@ -24,6 +24,13 @@ interface FrameData {
   offsets: number[]; // offsets[i]..offsets[i+1]-1 es el fotograma i (el último llega hasta el final)
 }
 
+/** Ahorro de datos: Chrome/Android expone esto, Safari/iOS no — ahí simplemente no aplica. */
+function prefersSavingData(): boolean {
+  const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (!conn) return false;
+  return Boolean(conn.saveData) || conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g';
+}
+
 let framesPromise: Promise<FrameData> | null = null;
 /** Una sola descarga por sesión, compartida entre todas las instancias. */
 function loadFrames(): Promise<FrameData> {
@@ -72,6 +79,10 @@ export function MrnaAsciiAnimation({
   const [frames, setFrames] = useState<FrameData | null>(null);
   const [visible, setVisible] = useState(false);
   const [scale, setScale] = useState(1);
+  // Distingue "todavía no entra en pantalla" de "entró y sigue bajando el archivo" (~880 KB
+  // comprimidos): sin esto, en una conexión lenta la tarjeta se veía en blanco un buen
+  // rato y parecía rota en vez de estar cargando.
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error' | 'saveData'>('idle');
   const containerRef = useRef<HTMLDivElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
 
@@ -84,12 +95,27 @@ export function MrnaAsciiAnimation({
     return () => io.disconnect();
   }, []);
 
+  const loadStartedRef = useRef(false);
   useEffect(() => {
-    if (!visible || frames) return;
+    if (!visible || frames || loadStartedRef.current) return;
+    if (prefersSavingData()) {
+      setStatus('saveData');
+      return;
+    }
+    loadStartedRef.current = true;
     let cancelled = false;
+    setStatus('loading');
     loadFrames()
-      .then((f) => !cancelled && setFrames(f))
-      .catch(() => {});
+      .then((f) => {
+        if (cancelled) return;
+        setFrames(f);
+        setStatus('idle');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        loadStartedRef.current = false; // permite reintentar si vuelve a entrar en pantalla
+        setStatus('error');
+      });
     return () => {
       cancelled = true;
     };
@@ -161,6 +187,17 @@ export function MrnaAsciiAnimation({
         ...style,
       }}
     >
+      {/* Antes, en una conexión lenta, esta tarjeta se veía en blanco mientras bajaba el
+          archivo (~880 KB comprimidos) y parecía rota. Ahora dice qué está pasando. */}
+      {!frames && status !== 'idle' && (
+        <div className="absolute inset-0 flex items-center justify-center px-4 text-center">
+          <span className="font-mono text-[10px] uppercase tracking-widest opacity-60">
+            {status === 'loading' && 'cargando animación…'}
+            {status === 'saveData' && 'animación pausada (ahorro de datos activo)'}
+            {status === 'error' && 'no se pudo cargar la animación'}
+          </span>
+        </div>
+      )}
       <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center', flex: 'none' }}>
         <pre
           ref={preRef}
