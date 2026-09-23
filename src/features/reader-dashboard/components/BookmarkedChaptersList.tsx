@@ -9,7 +9,7 @@ export function BookmarkedChaptersList({ items }: { items: BookmarkedChapterWith
       {items.map((item) => (
         <Link
           key={item.id}
-          href={`/categorias/${item.project.id}?chapter=${item.chapterNumber}`}
+          href={`/categorias/${item.project.slug}?chapter=${item.chapterNumber}`}
           className="group flex items-center gap-3 p-3 rounded-xl bg-[#120A08] border border-white/10 hover:border-[#FFD700]/50 transition-all"
         >
           <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-black/60 shrink-0">

@@ -18,8 +18,8 @@ export function RecentActivityFeed({ entries }: { entries: ActivityEntry[] }) {
         const Icon = meta.icon;
         const href =
           entry.type === 'bookmark' && entry.chapterNumber
-            ? `/categorias/${entry.project.id}?chapter=${entry.chapterNumber}`
-            : `/categorias/${entry.project.id}`;
+            ? `/categorias/${entry.project.slug}?chapter=${entry.chapterNumber}`
+            : `/categorias/${entry.project.slug}`;
         return (
           <Link
             key={entry.id}

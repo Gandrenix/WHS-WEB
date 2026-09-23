@@ -124,7 +124,7 @@ export function MediaFormatModal({ project, isOpen, onClose }: MediaFormatModalP
             return (
               <Link
                 key={fmt.id}
-                href={`/categorias/${project.id}?mode=${fmt.param}`}
+                href={`/categorias/${project.slug}?mode=${fmt.param}`}
                 onClick={onClose}
                 className={`p-4 rounded-2xl border ${fmt.bgColor} ${fmt.hoverColor} transition-all flex items-center justify-between group cursor-pointer shadow-lg`}
               >

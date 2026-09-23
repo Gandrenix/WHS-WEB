@@ -178,7 +178,7 @@ export function ProjectList({ projects }: ProjectListProps) {
                   <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                     {/* Read Work */}
                     <Link
-                      href={`/categorias/${project.id}`}
+                      href={`/categorias/${project.slug}`}
                       target="_blank"
                       className="p-2.5 bg-[#8B2FE0]/20 hover:bg-[#8B2FE0] text-[#C084FC] hover:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-1 border border-[#8B2FE0]/40 text-center"
                     >
@@ -313,7 +313,7 @@ export function ProjectList({ projects }: ProjectListProps) {
             <div className="flex justify-between items-center pt-2 text-[10px] text-[#F2EDE4]/60">
               <span>ID REGISTRO: {summaryModalProject.id}</span>
               <Link
-                href={`/categorias/${summaryModalProject.id}`}
+                href={`/categorias/${summaryModalProject.slug}`}
                 target="_blank"
                 className="px-4 py-2 bg-[#8B2FE0] text-white rounded-xl font-bold flex items-center gap-1.5 text-xs hover:bg-[#C084FC]"
               >

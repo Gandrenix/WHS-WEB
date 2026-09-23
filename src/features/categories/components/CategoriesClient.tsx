@@ -46,8 +46,13 @@ export function CategoriesClient({ initialProjects }: CategoriesClientProps) {
       {/* Hero Header */}
       <section className="py-24 bg-transparent border-b border-white/10 text-center relative z-10">
         <div className="max-w-5xl mx-auto px-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8B2FE0]/30 text-[#C084FC] font-mono text-xs font-bold uppercase tracking-widest mb-6 border border-[#8B2FE0]/50 shadow-lg">
-            CATÁLOGO &bull; S I S T E M A &nbsp; E S T R A T O
+          {/* Antes cada letra de "SISTEMA ESTRATO" llevaba su propio espacio literal (para
+              simular letter-spacing "a mano") — el navegador trata cada letra suelta como su
+              propia palabra y en pantallas angostas corta la línea entre cualquiera de ellas,
+              exactamente donde no debía. `tracking-widest` (letter-spacing real) da el mismo
+              efecto visual sin crear puntos de corte falsos. */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8B2FE0]/30 text-[#C084FC] font-mono text-xs font-bold uppercase tracking-widest mb-6 border border-[#8B2FE0]/50 shadow-lg text-center">
+            CATÁLOGO &bull; SISTEMA ESTRATO
           </div>
 
           <h1 className="font-mono text-4xl sm:text-6xl font-black uppercase text-white mb-4 tracking-tight drop-shadow-md">

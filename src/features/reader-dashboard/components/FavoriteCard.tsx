@@ -12,7 +12,7 @@ export function FavoriteCard({ item }: { item: FavoriteWithProject }) {
         <FavoriteToggleButton projectId={project.id} initialFavorited variant="solid" />
       </div>
 
-      <Link href={`/categorias/${project.id}`} className="flex flex-col flex-1">
+      <Link href={`/categorias/${project.slug}`} className="flex flex-col flex-1">
         <div className="relative h-36 w-full overflow-hidden bg-black/60">
           <Image
             src={project.image_url || '/images/WIP.png'}

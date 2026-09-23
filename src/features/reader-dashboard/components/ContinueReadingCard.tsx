@@ -13,7 +13,7 @@ export function ContinueReadingCard({ item }: { item: ProgressWithProject }) {
 
   return (
     <Link
-      href={`/categorias/${project.id}`}
+      href={`/categorias/${project.slug}`}
       className="group flex flex-col rounded-2xl overflow-hidden bg-[#120A08] border border-white/10 hover:border-[#8B2FE0]/50 shadow-md hover:shadow-xl transition-all duration-300"
     >
       <div className="relative h-36 w-full overflow-hidden bg-black/60">

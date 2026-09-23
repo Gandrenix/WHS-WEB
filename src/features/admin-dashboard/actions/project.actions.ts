@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/shared/lib/supabase/server';
+import { generateUniqueProjectSlug } from '@/entities/project/server';
 import { ProjectSchema } from '../schemas/project.schema';
 import { GalleryUploadRequestSchema } from '../schemas/galleryUpload.schema';
 import { parseStoryChapters, parseMarkdownStory, serializeStoryChapters, parseYamlFrontmatter } from '@/features/document-reader/components/MarkdownEngine/MarkdownParser';
@@ -162,6 +163,10 @@ export async function createProjectAction(
   // 5. Inserción adaptativa en la base de datos
   const insertPayload: Record<string, unknown> = {
     title: parsed.data.title,
+    // URL pública legible (/categorias/ortodoncia-sonrisa-real en vez del UUID crudo).
+    // Se asigna una sola vez, al crear — no se recalcula en updateProjectAction para no
+    // romper links ya compartidos si el título se edita después.
+    slug: await generateUniqueProjectSlug(parsed.data.title),
     description: parsed.data.description,
     category: parsed.data.category,
     status: parsed.data.status,

@@ -5,6 +5,8 @@ export interface DownloadLink {
 
 export interface Project {
   id: string;
+  /** URL pública legible (ej. "cuatro-paredes"): lo que se muestra en /categorias/[slug]. */
+  slug: string;
   created_at?: string;
   title: string;
   description: string;

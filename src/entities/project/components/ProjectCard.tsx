@@ -126,7 +126,7 @@ export function ProjectCard({ project, variant = 'light' }: ProjectCardProps) {
           {/* Action Button */}
           <div className="pt-4 border-t border-current/10 flex items-center justify-between">
             <Link
-              href={`/categorias/${project.id}`}
+              href={`/categorias/${project.slug}`}
               onClick={handleCardActionClick}
               className={`inline-flex items-center gap-2 font-mono text-xs font-bold transition-colors cursor-pointer ${
                 isLight

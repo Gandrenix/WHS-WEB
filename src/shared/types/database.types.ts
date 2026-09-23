@@ -12,6 +12,7 @@ export interface Database {
       projects: {
         Row: {
           id: string;
+          slug: string;
           created_at: string;
           title: string;
           description: string;
@@ -28,6 +29,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          slug: string;
           created_at?: string;
           title: string;
           description: string;
@@ -44,6 +46,7 @@ export interface Database {
         };
         Update: {
           id?: string;
+          slug?: string;
           created_at?: string;
           title?: string;
           description?: string;
