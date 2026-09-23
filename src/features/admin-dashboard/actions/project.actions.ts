@@ -845,27 +845,34 @@ export async function uploadGalleryImageAction(
   prevState: ImageUploadResponse,
   formData: FormData
 ): Promise<ImageUploadResponse> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user && process.env.NODE_ENV === 'production') {
-    return { error: 'No autorizado. Inicie sesión como administrador.' };
-  }
-
-  const file = formData.get('file') as File | null;
-  if (!file || file.size === 0) {
-    return { error: 'Selecciona una imagen.' };
-  }
-  if (!file.type.startsWith('image/')) {
-    return { error: 'El archivo debe ser una imagen.' };
-  }
-  if (file.size > MAX_GALLERY_IMAGE_BYTES) {
-    return { error: `La imagen pesa demasiado (máx. ${MAX_GALLERY_IMAGE_BYTES / 1024 / 1024} MB).` };
-  }
-
+  // TODO el cuerpo va dentro del try — createClient() y auth.getUser() también pueden
+  // fallar (credenciales de Supabase mal configuradas, sesión inválida, etc.), y si eso
+  // pasa AFUERA de un try/catch la Server Action termina en una excepción sin capturar:
+  // useActionState no tiene un `state.error` que mostrar, así que en el navegador se ve
+  // exactamente como "no pasa nada" (el único indicio real queda en la terminal del
+  // servidor, invisible para quien está probando la página). Con esto, cualquier fallo
+  // — el que sea — siempre vuelve como { error } en vez de tirar la Server Action entera.
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user && process.env.NODE_ENV === 'production') {
+      return { error: 'No autorizado. Inicie sesión como administrador.' };
+    }
+
+    const file = formData.get('file') as File | null;
+    if (!file || file.size === 0) {
+      return { error: 'Selecciona una imagen.' };
+    }
+    if (!file.type.startsWith('image/')) {
+      return { error: 'El archivo debe ser una imagen.' };
+    }
+    if (file.size > MAX_GALLERY_IMAGE_BYTES) {
+      return { error: `La imagen pesa demasiado (máx. ${MAX_GALLERY_IMAGE_BYTES / 1024 / 1024} MB).` };
+    }
+
     const fileExt = file.name.split('.').pop() || 'jpg';
     const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
     const filePath = `project-gallery/${fileName}`;
@@ -879,8 +886,9 @@ export async function uploadGalleryImageAction(
 
     const { data: publicUrlData } = supabase.storage.from('whs-media').getPublicUrl(filePath);
     return { url: publicUrlData.publicUrl };
-  } catch {
-    return { error: 'Error inesperado al subir la imagen.' };
+  } catch (e) {
+    console.error('[uploadGalleryImageAction] Error inesperado:', e);
+    return { error: e instanceof Error ? `Error inesperado: ${e.message}` : 'Error inesperado al subir la imagen.' };
   }
 }
 
