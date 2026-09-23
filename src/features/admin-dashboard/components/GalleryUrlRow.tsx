@@ -5,19 +5,14 @@
 // de la fila 3 no debe bloquear ni compartir estado con la fila 1) — un hook no puede
 // llamarse dentro del .map() del padre, así que la fila entera es su propio componente.
 //
-// La subida llama al Server Action DIRECTO (dentro de un useTransition), no a través de
-// un <form action={...}> con requestSubmit(): con esa primera versión, React 19 tiraba
-// "A React form was unexpectedly submitted" en producción — el manejo nativo de
-// formularios de React 19 espera que el submit venga de una interacción de usuario
-// "normal" sobre el propio <form>, y dispararlo a mano desde el onChange del input
-// (aunque sea con requestSubmit(), la forma correcta según el mensaje) cae en un caso
-// límite que React todavía no maneja bien. Llamar la función del Server Action
-// directamente evita todo ese mecanismo — sigue siendo una Server Action real (RPC al
-// servidor), solo que sin pasar por un <form>.
-import { useId, useRef, useState, useTransition } from 'react';
+// La subida va directo del navegador a Supabase Storage (ver useGalleryImageUpload): sin tope
+// de tamaño propio y sin pasar por la app. Antes se llamaba a un Server Action con el archivo
+// dentro — fallaba con imágenes grandes (Netlify corta las peticiones de ~6 MB+).
+import { useId, useRef, useState } from 'react';
 import Image from 'next/image';
-import { AlertTriangle, ChevronDown, ChevronUp, ImageOff, Loader2, Trash2, Upload } from 'lucide-react';
-import { uploadGalleryImageAction } from '../actions/project.actions';
+import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, ImageOff, Loader2, Maximize2, Trash2, Upload, X } from 'lucide-react';
+import { useGalleryImageUpload } from '../hooks/useGalleryImageUpload';
+import { ImageLightbox } from './ImageLightbox';
 
 /**
  * Los enlaces "para compartir" de Google Drive (y similares: Dropbox `?dl=0`, OneDrive
@@ -42,23 +37,13 @@ export interface GalleryUrlRowProps {
 export function GalleryUrlRow({ index, url, isFirst, isLast, onUpdate, onRemove, onMove }: GalleryUrlRowProps) {
   const idBase = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const { upload, isUploading, error, dismissError } = useGalleryImageUpload((publicUrl) => onUpdate(index, publicUrl));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = ''; // permite volver a elegir el mismo archivo si la subida falla
-    if (!file) return;
-
-    setError(null);
-    const formData = new FormData();
-    formData.set('file', file);
-
-    startTransition(async () => {
-      const result = await uploadGalleryImageAction({}, formData);
-      if (result.url) onUpdate(index, result.url);
-      else setError(result.error || 'Error inesperado al subir la imagen.');
-    });
+    if (file) upload(file);
   };
 
   const showShareLinkWarning = url && isUnsupportedShareLink(url);
@@ -74,17 +59,28 @@ export function GalleryUrlRow({ index, url, isFirst, isLast, onUpdate, onRemove,
               <Loader2 className="w-4 h-4 animate-spin" />
             </div>
           ) : url && !showShareLinkWarning ? (
-            <Image
-              src={url}
-              alt={`Miniatura ${index + 1}`}
-              fill
-              sizes="48px"
-              className="object-cover"
-              unoptimized
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.opacity = '0';
-              }}
-            />
+            <button
+              type="button"
+              onClick={() => setZoomOpen(true)}
+              className="group/thumb relative block w-full h-full cursor-zoom-in"
+              aria-label={`Ampliar imagen ${index + 1}`}
+              title="Ver en grande"
+            >
+              <Image
+                src={url}
+                alt={`Miniatura ${index + 1}`}
+                fill
+                sizes="48px"
+                className="object-cover"
+                unoptimized
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.opacity = '0';
+                }}
+              />
+              <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-white opacity-0 transition-opacity group-hover/thumb:opacity-100 group-focus-visible/thumb:opacity-100">
+                <Maximize2 className="w-4 h-4" />
+              </span>
+            </button>
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[#F2EDE4]/20">
               <ImageOff className="w-4 h-4" />
@@ -157,11 +153,40 @@ export function GalleryUrlRow({ index, url, isFirst, isLast, onUpdate, onRemove,
           (abren un visor, no el archivo). Usa el botón de subir <Upload className="w-2.5 h-2.5 inline" /> en su lugar.
         </p>
       )}
-      {error && !isUploading && (
-        <p className="pl-9 text-[10px] text-[#ff8a95] font-sans" id={`${idBase}-error`}>
-          {error}
+      {isUploading && (
+        <p className="flex items-center gap-2 pl-9 text-xs text-[#C084FC]" role="status">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Subiendo imagen…
         </p>
       )}
+      {error && !isUploading && (
+        <div
+          role="alert"
+          id={`${idBase}-error`}
+          className="ml-9 flex items-start gap-3 rounded-xl border border-red-500/40 bg-red-950/50 p-3"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-sm font-semibold leading-snug text-red-100">{error.title}</p>
+            {error.hint && <p className="text-xs leading-relaxed text-red-200/80">{error.hint}</p>}
+            <details className="text-xs text-red-200/60">
+              <summary className="cursor-pointer select-none hover:text-red-100">Detalle técnico</summary>
+              <code className="mt-1 block break-words rounded bg-black/40 p-2 font-mono text-[11px] leading-relaxed text-red-100/90">
+                {error.detail}
+              </code>
+            </details>
+          </div>
+          <button
+            type="button"
+            onClick={dismissError}
+            aria-label="Cerrar aviso"
+            className="shrink-0 rounded-md p-1 text-red-200/70 hover:bg-white/10 hover:text-white cursor-pointer"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {zoomOpen && url && <ImageLightbox src={url} alt={`Imagen ${index + 1} de la galería`} onClose={() => setZoomOpen(false)} />}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/shared/lib/supabase/server';
 import { ProjectSchema } from '../schemas/project.schema';
+import { GalleryUploadRequestSchema } from '../schemas/galleryUpload.schema';
 import { parseStoryChapters, parseMarkdownStory, serializeStoryChapters, parseYamlFrontmatter } from '@/features/document-reader/components/MarkdownEngine/MarkdownParser';
 
 export interface ActionResponse {
@@ -11,13 +12,14 @@ export interface ActionResponse {
   success?: boolean;
 }
 
-export interface ImageUploadResponse {
+export interface GalleryUploadTicket {
   error?: string | null;
-  url?: string;
+  /** Ruta dentro del bucket y token de un solo uso para `uploadToSignedUrl`. */
+  path?: string;
+  token?: string;
+  /** URL pública definitiva de la imagen, válida en cuanto termina la subida. */
+  publicUrl?: string;
 }
-
-/** Tamaño máximo aceptado para una imagen de galería subida desde PC. */
-const MAX_GALLERY_IMAGE_BYTES = 10 * 1024 * 1024;
 
 interface DownloadLinkInput {
   label: string;
@@ -833,25 +835,22 @@ export async function updateProjectAction(
   return { success: true };
 }
 
-// Sube UNA imagen de galería desde el equipo del admin y devuelve su URL pública — no toca
-// ninguna fila de `projects`: GalleryUrlsEditor la llama fila por fila (cada fila es solo
-// texto hasta que se guarda el formulario completo) y mete la URL resultante en su campo,
-// exactamente como si el admin la hubiera pegado a mano. Antes la única forma de llenar la
-// galería era pegar una URL ya pública — enlaces "para compartir" de Google Drive, Dropbox,
-// etc. NUNCA sirven ahí: esos enlaces abren un visor HTML, no el archivo crudo, así que
-// <img src> jamás los va a poder pintar (no es un bug de esta app, es cómo funcionan esos
-// enlaces — GalleryUrlsEditor ahora lo explica en vez de mostrar solo un ícono roto).
-export async function uploadGalleryImageAction(
-  prevState: ImageUploadResponse,
-  formData: FormData
-): Promise<ImageUploadResponse> {
-  // TODO el cuerpo va dentro del try — createClient() y auth.getUser() también pueden
-  // fallar (credenciales de Supabase mal configuradas, sesión inválida, etc.), y si eso
-  // pasa AFUERA de un try/catch la Server Action termina en una excepción sin capturar:
-  // useActionState no tiene un `state.error` que mostrar, así que en el navegador se ve
-  // exactamente como "no pasa nada" (el único indicio real queda en la terminal del
-  // servidor, invisible para quien está probando la página). Con esto, cualquier fallo
-  // — el que sea — siempre vuelve como { error } en vez de tirar la Server Action entera.
+// Autoriza la subida de UNA imagen de galería y devuelve un "ticket" (ruta + token firmado):
+// el navegador manda el archivo DIRECTO a Supabase Storage, no a través de esta Server Action.
+// Antes el archivo viajaba dentro de la petición a la app, y ahí las funciones de Netlify
+// rechazan cualquier cuerpo de más de ~6 MB — las ilustraciones grandes del portafolio
+// fallaban sí o sí. Con el ticket no hay tope propio (solo el de Supabase), y la app no gasta
+// ancho de banda ni memoria moviendo el archivo.
+//
+// No toca ninguna fila de `projects`: GalleryUrlsEditor mete la URL resultante en su campo,
+// exactamente como si el admin la hubiera pegado a mano (los enlaces "para compartir" de
+// Drive/Dropbox nunca sirven ahí: abren un visor HTML, no el archivo crudo).
+export async function createGalleryUploadAction(input: {
+  fileName: string;
+  contentType: string;
+}): Promise<GalleryUploadTicket> {
+  // Todo dentro del try: si createClient()/getUser() fallan fuera, la Server Action revienta
+  // sin devolver nada y en pantalla se ve como "no pasa nada".
   try {
     const supabase = await createClient();
     const {
@@ -862,35 +861,23 @@ export async function uploadGalleryImageAction(
       return { error: 'No autorizado. Inicie sesión como administrador.' };
     }
 
-    const file = formData.get('file') as File | null;
-    if (!file || file.size === 0) {
-      return { error: 'Selecciona una imagen.' };
-    }
-    if (!file.type.startsWith('image/')) {
-      return { error: 'El archivo debe ser una imagen.' };
-    }
-    if (file.size > MAX_GALLERY_IMAGE_BYTES) {
-      return { error: `La imagen pesa demasiado (máx. ${MAX_GALLERY_IMAGE_BYTES / 1024 / 1024} MB).` };
+    const parsed = GalleryUploadRequestSchema.safeParse(input);
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? 'Archivo inválido.' };
     }
 
-    const fileExt = file.name.split('.').pop() || 'jpg';
-    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-    const filePath = `project-gallery/${fileName}`;
+    const fileExt = parsed.data.fileName.split('.').pop()?.toLowerCase() || 'jpg';
+    const path = `project-gallery/${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage.from('whs-media').upload(filePath, file, {
-      contentType: file.type,
-    });
-    if (uploadError) {
-      return { error: `Error al subir la imagen: ${uploadError.message}` };
+    const { data, error } = await supabase.storage.from('whs-media').createSignedUploadUrl(path);
+    if (error || !data) {
+      return { error: `No se pudo preparar la subida: ${error?.message ?? 'sin respuesta'}` };
     }
 
-    const { data: publicUrlData } = supabase.storage.from('whs-media').getPublicUrl(filePath);
-    return { url: publicUrlData.publicUrl };
+    const { data: publicUrlData } = supabase.storage.from('whs-media').getPublicUrl(path);
+    return { path: data.path, token: data.token, publicUrl: publicUrlData.publicUrl };
   } catch (e) {
-    console.error('[uploadGalleryImageAction] Error inesperado:', e);
-    return { error: e instanceof Error ? `Error inesperado: ${e.message}` : 'Error inesperado al subir la imagen.' };
+    console.error('[createGalleryUploadAction] Error inesperado:', e);
+    return { error: e instanceof Error ? `Error inesperado: ${e.message}` : 'Error inesperado al preparar la subida.' };
   }
 }
-
-
-

@@ -20,7 +20,7 @@
 // el último valor que este mismo componente emitió (lastEmitted).
 //
 // Cada fila lleva un `id` propio (no el índice) para usar como key de React:
-// GalleryUrlRow tiene su PROPIO estado de subida (useActionState), y con
+// GalleryUrlRow tiene su PROPIO estado de subida (useGalleryImageUpload), y con
 // key={índice} reordenar filas (los botones subir/bajar) haría que React
 // reutilice el componente de una posición para OTRA fila — un spinner de
 // subida en curso "saltaría" a la fila equivocada en vez de seguir a su URL.
