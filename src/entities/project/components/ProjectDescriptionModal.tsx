@@ -11,6 +11,39 @@ import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { Info, X } from 'lucide-react';
 
+/**
+ * La descripción llega como texto plano — {description} nunca se interpretó como markdown,
+ * así que una URL pegada ahí (con o sin corchetes alrededor, como referencia visual para el
+ * admin) se mostraba tal cual, sin ser clicable. Esto la detecta y la convierte en <a> real;
+ * los corchetes que la rodeen se descartan (ya no hacen falta una vez que es un link de verdad).
+ */
+function linkifyDescription(text: string): ReactNode[] {
+  const urlPattern = /\[?(https?:\/\/[^\s\]]+)\]?/g;
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = urlPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    const url = match[1];
+    parts.push(
+      <a
+        key={key++}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[#C084FC] underline underline-offset-2 hover:text-white break-all"
+      >
+        {url}
+      </a>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+}
+
 export interface ProjectDescriptionModalProps {
   title: string;
   description: string;
@@ -87,7 +120,7 @@ export function ProjectDescriptionModal({
           <div className="p-4 bg-black/60 border border-white/10 rounded-xl space-y-2 max-h-[50vh] overflow-y-auto">
             <span className="text-[#C084FC] text-[11px] font-bold block uppercase">Sinopsis / Descripción completa:</span>
             <p className="font-sans text-xs text-[#F2EDE4]/90 leading-relaxed whitespace-pre-wrap">
-              {description}
+              {linkifyDescription(description)}
             </p>
           </div>
 
