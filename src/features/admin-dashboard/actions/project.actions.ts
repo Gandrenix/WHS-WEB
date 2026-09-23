@@ -11,6 +11,14 @@ export interface ActionResponse {
   success?: boolean;
 }
 
+export interface ImageUploadResponse {
+  error?: string | null;
+  url?: string;
+}
+
+/** Tamaño máximo aceptado para una imagen de galería subida desde PC. */
+const MAX_GALLERY_IMAGE_BYTES = 10 * 1024 * 1024;
+
 interface DownloadLinkInput {
   label: string;
   url: string;
@@ -825,8 +833,56 @@ export async function updateProjectAction(
   return { success: true };
 }
 
+// Sube UNA imagen de galería desde el equipo del admin y devuelve su URL pública — no toca
+// ninguna fila de `projects`: GalleryUrlsEditor la llama fila por fila (cada fila es solo
+// texto hasta que se guarda el formulario completo) y mete la URL resultante en su campo,
+// exactamente como si el admin la hubiera pegado a mano. Antes la única forma de llenar la
+// galería era pegar una URL ya pública — enlaces "para compartir" de Google Drive, Dropbox,
+// etc. NUNCA sirven ahí: esos enlaces abren un visor HTML, no el archivo crudo, así que
+// <img src> jamás los va a poder pintar (no es un bug de esta app, es cómo funcionan esos
+// enlaces — GalleryUrlsEditor ahora lo explica en vez de mostrar solo un ícono roto).
+export async function uploadGalleryImageAction(
+  prevState: ImageUploadResponse,
+  formData: FormData
+): Promise<ImageUploadResponse> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  if (!user && process.env.NODE_ENV === 'production') {
+    return { error: 'No autorizado. Inicie sesión como administrador.' };
+  }
 
+  const file = formData.get('file') as File | null;
+  if (!file || file.size === 0) {
+    return { error: 'Selecciona una imagen.' };
+  }
+  if (!file.type.startsWith('image/')) {
+    return { error: 'El archivo debe ser una imagen.' };
+  }
+  if (file.size > MAX_GALLERY_IMAGE_BYTES) {
+    return { error: `La imagen pesa demasiado (máx. ${MAX_GALLERY_IMAGE_BYTES / 1024 / 1024} MB).` };
+  }
+
+  try {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+    const filePath = `project-gallery/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage.from('whs-media').upload(filePath, file, {
+      contentType: file.type,
+    });
+    if (uploadError) {
+      return { error: `Error al subir la imagen: ${uploadError.message}` };
+    }
+
+    const { data: publicUrlData } = supabase.storage.from('whs-media').getPublicUrl(filePath);
+    return { url: publicUrlData.publicUrl };
+  } catch {
+    return { error: 'Error inesperado al subir la imagen.' };
+  }
+}
 
 
 
