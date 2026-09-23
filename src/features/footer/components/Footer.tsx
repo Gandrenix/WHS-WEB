@@ -13,7 +13,7 @@ export interface FooterProps {
 
 const DEFAULT_SOCIAL_LINKS: Pick<FooterSocialLink, 'label' | 'url'>[] = [
   { label: 'GitHub', url: 'https://github.com' },
-  { label: 'LinkedIn', url: 'https://linkedin.com' },
+  { label: 'TikTok', url: 'https://www.tiktok.com/@wienerhound' },
   { label: 'YouTube', url: 'https://youtube.com' },
   { label: 'SoundCloud', url: 'https://soundcloud.com' },
   { label: 'Itch.io', url: 'https://itch.io' },
@@ -95,7 +95,7 @@ export function Footer({ socialLinks }: FooterProps = {}) {
         {/* Bottom copyright & Legal buttons */}
         <div className="pt-6 flex flex-wrap justify-between items-center text-xs font-mono font-bold text-[#0D0A08] uppercase tracking-wider gap-4">
           <div>&copy; 2026 Wiener Hound Studios. Todos los derechos excavados.</div>
-          
+
           <div className="flex gap-6 items-center">
             <Link
               href="/politica-privacidad"
