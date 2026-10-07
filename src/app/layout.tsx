@@ -36,6 +36,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: { default: TITLE, template: `%s — ${siteConfig.name}` },
   description: DESCRIPTION,
+  // Sin esto, Google no tiene una URL "oficial" declarada para cada página — importante en
+  // el dominio raíz porque hoy mismo coexisten wienerhound.com y el workers.dev temporal.
+  alternates: { canonical: '/' },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
@@ -51,6 +54,19 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     images: ['/og-image.jpg'],
   },
+};
+
+// Datos estructurados (JSON-LD): sin esto, Google no tiene forma de saber que este sitio
+// representa una organización/negocio real — es lo que habilita que aparezca con nombre,
+// logo y descripción en un panel de conocimiento, en vez de solo como un link azul más.
+// Estático porque la info que describe (nombre, descripción, logo) no cambia por página.
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: siteConfig.name,
+  url: siteConfig.url,
+  logo: `${siteConfig.url}/icon.png`,
+  description: siteConfig.description,
 };
 
 export default async function RootLayout({
@@ -69,6 +85,12 @@ export default async function RootLayout({
       className={`${inter.variable} ${ibmPlexMono.variable} ${fraunces.variable} ${bricolage.variable} scroll-smooth`}
     >
       <body className="bg-[#F2EDE4] text-[#3A3532] font-sans overflow-x-hidden antialiased">
+        {/* JSON.stringify de un objeto propio, sin input de usuario — patrón estándar de
+            Next.js para insertar JSON-LD. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         {/* Un solo reproductor para todo el sitio: el botón del header y la tarjeta
             "Diseño Sonoro" de STRATA II leen y controlan el mismo, vía useAudioPlayer(). */}
         <AudioPlayerProvider songs={songs}>
