@@ -70,7 +70,7 @@ export async function sendContactMessageAction(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Wiener Hound Studios <onboarding@resend.dev>',
+          from: 'Wiener Hound Studios <correo@wienerhound.com>',
           to: [NOTIFICATION_EMAIL],
           reply_to: email,
           subject: `Nuevo mensaje de contacto de ${name}`,
