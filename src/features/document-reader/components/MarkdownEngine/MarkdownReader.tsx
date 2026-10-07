@@ -369,7 +369,7 @@ export function MarkdownReader({
             return (
               <div key={index} className="my-8 rounded-2xl overflow-hidden border border-white/15 bg-black/60 shadow-2xl relative clear-both">
                 <Image
-                  src={block.src || '/images/pale-veil.png'}
+                  src={block.src || '/images/pale-veil.webp'}
                   alt={block.alt || 'Ilustración de escena'}
                   width={800}
                   height={500}

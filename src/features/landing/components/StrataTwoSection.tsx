@@ -57,7 +57,7 @@ export function StrataTwoSection() {
           <div className="fade-up group bg-[#0F0C17] border-2 border-white/15 hover:border-[#C084FC] flex flex-col transition-colors">
             <div className="relative h-52 overflow-hidden border-b-2 border-white/15 group-hover:border-[#C084FC] transition-colors">
               <Image
-                src="/images/pale-veil.png"
+                src="/images/pale-veil.webp"
                 alt="Blender 3D Environment Work"
                 fill
                 className="object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
@@ -84,7 +84,7 @@ export function StrataTwoSection() {
           <div className="fade-up group bg-[#0F0C17] border-2 border-white/15 hover:border-[#C084FC] flex flex-col transition-colors">
             <div className="relative h-52 overflow-hidden border-b-2 border-white/15 group-hover:border-[#C084FC] transition-colors cursor-pointer">
               <Image
-                src="/images/umbral.png"
+                src="/images/umbral.webp"
                 alt="Gameplay Prototype"
                 fill
                 className="object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"

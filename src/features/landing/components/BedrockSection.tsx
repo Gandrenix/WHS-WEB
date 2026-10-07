@@ -81,7 +81,7 @@ export function BedrockSection() {
         style={{ transform: `translate3d(${photoX}px, ${photoY}px, 0) scale(1.08)` }}
       >
         <Image
-          src="/images/pale-veil.png"
+          src="/images/pale-veil.webp"
           alt="Silueta observando la ciudad en la niebla nocturna"
           fill
           sizes="100vw"

@@ -4,7 +4,7 @@ import { Container } from '@/shared/ui/Container';
 export function Hero() {
   return (
     <section
-      className="hero relative text-center pt-[160px] pb-[160px] px-5 bg-cover bg-center bg-fixed overflow-hidden bg-[image:linear-gradient(to_bottom,rgba(10,10,11,0.3),var(--color-bg-dark-primary,#0a0a0b)),url('/images/banner.png')]"
+      className="hero relative text-center pt-[160px] pb-[160px] px-5 bg-cover bg-center bg-fixed overflow-hidden bg-[image:linear-gradient(to_bottom,rgba(10,10,11,0.3),var(--color-bg-dark-primary,#0a0a0b)),url('/images/banner.webp')]"
       id="inicio"
     >
       <Container className="relative z-[2]">
